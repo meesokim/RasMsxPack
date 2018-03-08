@@ -36,8 +36,8 @@
 
 static unsigned char ROM[] = {
 //#include "Antarctic.data"
-#include "Gradius.data"
-//#include "Zemix30.data"
+//#include "Gradius.data"
+#include "Zemix30.data"
 };	
 
 /** GPIO Register set */
@@ -163,7 +163,7 @@ void notmain( unsigned int r0, unsigned int r1, unsigned int atags )
 				{
 					gpio[GPIO_GPCLR0] =  0xff | LE_B; 
 					gpio[GPIO_GPSET0] = (LE_A);
-					flushcache(); dmb(); 
+					flushcache(); dmb();
 					addr0 = gpio[GPIO_GPLEV0] & 0xffff;
 					pg = (addr0 & 0xe000)>>13;
 					byte = ROM[page[pg] * 0x2000 + (addr0 & 0x1fff)];
@@ -172,7 +172,7 @@ void notmain( unsigned int r0, unsigned int r1, unsigned int atags )
 					flushcache(); dmb();
 					while(!(gpio[GPIO_GPLEV0] & SLTSL));
 					gpio[GPIO_GPCLR0] = RW;
-					flushcache(); dmb(); 				
+//					flushcache(); dmb(); 				
 				}
 				else if (signal & WR)
 				{
