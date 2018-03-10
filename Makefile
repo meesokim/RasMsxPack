@@ -1,7 +1,7 @@
 ARMGNU ?= arm-none-eabi
 
-AOPS = --warn --fatal-warnings -mcpu=arm1176jzf-s
-COPS = -Wall -Werror -O2 -nostdlib -nostartfiles -ffreestanding -fomit-frame-pointer -march=arm -mcpu=arm1176jzf-s
+AOPS = --warn --fatal-warnings 
+COPS = -Wall -Werror -O2 -nostdlib -nostartfiles -ffreestanding -fomit-frame-pointer 
 
 gcc: rpmv0.hex rpmv0.bin
 
@@ -31,7 +31,7 @@ LOPS = -Wall -m32 -emit-llvm
 LLCOPS = -march=arm -mcpu=arm1176jzf-s
 LLCOPS0 = -march=arm 
 LLCOPS1 = -march=arm -mcpu=arm1176jzf-s
-COPS = -Wall  -O2 -nostdlib -nostartfiles -ffreestanding
+#COPS = -Wall  -O2 -nostdlib -nostartfiles -ffreestanding
 #OOPS = -std-compile-opts
 OOPS = -std-link-opts
 
