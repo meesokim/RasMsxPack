@@ -1,24 +1,17 @@
 ARMGNU ?= arm-none-eabi
 
-AOPS = --warn --fatal-warnings 
-COPS = -Wall -Werror -O2 -nostdlib -nostartfiles -ffreestanding 
+AOPS = --warn --fatal-warnings -mcpu=arm1176jzf-s
+COPS = -Wall -Werror -O2 -nostdlib -nostartfiles -ffreestanding -fomit-frame-pointer -march=arm -mcpu=arm1176jzf-s
 
 gcc: rpmv0.hex rpmv0.bin
 
 all: gcc clang
 
 clean:
-	rm -f *.o
-	rm -f *.bin
-	rm -f *.hex
-	rm -f *.elf
-	rm -f *.list
-	rm -f *.img
-	rm -f *.bc
-	rm -f *.clang.opt.s
+	rm -f *.o *.bin *.hex *.elf *.list *.img *.bc *.clang.opt.s
 
 vectors.o : vectors.s
-	$(ARMGNU)-as vectors.s -o vectors.o
+	$(ARMGNU)-as $(AOPS) vectors.s -o vectors.o
 
 rpmv0.o : rpmv0.c
 	$(ARMGNU)-gcc $(COPS) -c rpmv0.c -o rpmv0.o
@@ -32,10 +25,6 @@ rpmv0.bin : rpmv0.elf
 
 rpmv0.hex : rpmv0.elf
 	$(ARMGNU)-objcopy rpmv0.elf -O ihex rpmv0.hex
-
-
-
-
 
 
 LOPS = -Wall -m32 -emit-llvm
@@ -63,6 +52,6 @@ rpmv0.clang.hex : rpmv0.clang.opt.elf
 	$(ARMGNU)-objcopy rpmv0.clang.opt.elf rpmv0.clang.hex -O ihex
 
 rpmv0.clang.bin : rpmv0.clang.opt.elf
-	$(ARMGNU)-objcopy rpmv0.clang.opt.elf rpmv0.clang.bin -O binary
+	$(ARMGNU)-objcopy rpmv0.clang.opt.elf -O binary kernel.img 
 
 

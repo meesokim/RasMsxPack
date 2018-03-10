@@ -52,6 +52,28 @@ unsigned int GET32 ( unsigned int a)
 	return *(unsigned int *)a;
 }
 
+void GPIO_SET(unsigned int b)
+{
+	gpio[GPIO_GPSET0] = b;
+}
+
+void GPIO_CLR(unsigned int b)
+{
+	gpio[GPIO_GPCLR0] = b;
+}
+
+void GPIO_PUT(unsigned int a, unsigned int b)
+{
+	gpio[GPIO_GPSET0] = a;
+	gpio[GPIO_GPCLR0] = b;
+	asm volatile ("nop;");
+}
+
+unsigned int GPIO_GET0()
+{
+	return gpio[GPIO_GPLEV0];
+}
+
 extern void start_mmu ( unsigned int, unsigned int );
 extern void stop_mmu ( void );
 extern void invalidate_tlbs ( void );
@@ -112,41 +134,34 @@ void notmain( unsigned int r0, unsigned int r1, unsigned int atags )
         if(ra==0xFFF00000) break;
     }	
     //peripherals	
-    mmu_section(0x20000000,0x20000000,0x12); //NOT CACHED!
-    mmu_section(0x20200000,0x20200000,0x12); //NOT CACHED!	
+    mmu_section(0x20000000,0x20000000,0x0); //NOT CACHED!
+    mmu_section(0x20200000,0x20200000,0x0); //NOT CACHED!	
     start_mmu(MMUTABLEBASE,0x00000001|0x1000|0x0005); //[23]=0 subpages enabled = legacy ARMv4,v5 and v6 
     /* Set the LED GPIO pin to an output to drive the LED */
 #endif
     gpio[GPIO_GPFSEL0] = 0x49249249;
 	gpio[GPIO_GPFSEL1] = 0x49249249;
 	gpio[GPIO_GPFSEL2] = 0x49249249;
-	gpio[GPIO_GPCLR0] = LE_A | 0xffff;
-	gpio[GPIO_GPSET0] = LE_B | RST;
-	flushcache(); dmb();
-
+	GPIO_PUT(LE_B | RST, LE_A | 0xffff);
+	
 	if (sizeof(ROM) > 32768)
 		mapper = 1;
 	if (!mapper)
 	{
 		while(1)
 		{
-			signal = ~gpio[GPIO_GPLEV0];
+			signal = ~GPIO_GET0();
 			if (signal & SLTSL)
 			{
 				if (signal & RD)
 				{
-					gpio[GPIO_GPCLR0] =  0xff | LE_B; 
-					gpio[GPIO_GPSET0] = (LE_A);
-					flushcache(); dmb();
-					addr0 = gpio[GPIO_GPLEV0] & 0xffff;
+					GPIO_PUT(LE_A, 0xff | LE_B); 
+					addr0 = GPIO_GET0() & 0xffff;
 					pg = (addr0 & 0xe000)>>13;
 					byte = ROM[page[pg] * 0x2000 + (addr0 & 0x1fff)];
-					gpio[GPIO_GPSET0] = LE_B | byte | RW;
-					gpio[GPIO_GPCLR0] = (LE_A);
-					flushcache(); dmb();
+					GPIO_PUT(LE_B | byte | RW, LE_A);
 					while(!(gpio[GPIO_GPLEV0] & SLTSL));
-					gpio[GPIO_GPCLR0] = RW;
-					flushcache(); dmb(); 				
+					GPIO_PUT(0, RW);
 				}
 				else
 					continue;
@@ -156,35 +171,26 @@ void notmain( unsigned int r0, unsigned int r1, unsigned int atags )
 	{
 		while(1)
 		{
-			signal = ~gpio[GPIO_GPLEV0];
+			signal = ~GPIO_GET0();
 			if (signal & SLTSL)
 			{
 				if (signal & RD)
 				{
-					gpio[GPIO_GPCLR0] =  0xff | LE_B; 
-					gpio[GPIO_GPSET0] = (LE_A);
-					flushcache(); dmb();
-					addr0 = gpio[GPIO_GPLEV0] & 0xffff;
+					GPIO_PUT(LE_A, 0xff | LE_B); 
+					addr0 = GPIO_GET0() & 0xffff;
 					pg = (addr0 & 0xe000)>>13;
 					byte = ROM[page[pg] * 0x2000 + (addr0 & 0x1fff)];
-					gpio[GPIO_GPSET0] = LE_B | byte | RW;
-					gpio[GPIO_GPCLR0] = (LE_A);
-					flushcache(); dmb();
+					GPIO_PUT(LE_B | byte | RW, LE_A);
 					while(!(gpio[GPIO_GPLEV0] & SLTSL));
-					gpio[GPIO_GPCLR0] = RW;
-//					flushcache(); dmb(); 				
+					GPIO_PUT(0, RW);
 				}
 				else if (signal & WR)
 				{
-					gpio[GPIO_GPCLR0] =  0xff | LE_B; 
-					gpio[GPIO_GPSET0] = (LE_A);
-					flushcache(); dmb();
-					addr0 = gpio[GPIO_GPLEV0] & 0xffff;
+					GPIO_PUT(LE_A, 0xff | LE_B); 
+					addr0 = GPIO_GET0() & 0xffff;
 					pg = (addr0 & 0xe000)>>13;
-					gpio[GPIO_GPSET0] = LE_B;
-					gpio[GPIO_GPCLR0] = (LE_A);
-					flushcache(); dmb(); 
-					byte = 0x1f & gpio[GPIO_GPLEV0];
+					GPIO_PUT(LE_B, LE_A);
+					byte = 0x3f & GPIO_GET0();
 					if ((((addr0 & 0x1fff) == 0) && (pg > 2)) || (!(addr0 & 0xfff)))
 						page[pg] = byte;
 					while(!(gpio[GPIO_GPLEV0] & SLTSL));

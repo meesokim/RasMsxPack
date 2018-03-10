@@ -13,10 +13,10 @@ _start:
     mrc p15,0,r0,c1,c0,0
 	
     // Enable caches and branch prediction
-    bic r0,#SCTLR_ENABLE_BRANCH_PREDICTION
+    orr r0,#SCTLR_ENABLE_BRANCH_PREDICTION
     bic r0,#SCTLR_ENABLE_DATA_CACHE
-    bic r0,#SCTLR_ENABLE_INSTRUCTION_CACHE
-	bic r0,#SCTLR_ENABLE_MMU
+    orr r0,#SCTLR_ENABLE_INSTRUCTION_CACHE
+	//bic r0,#SCTLR_ENABLE_MMU
 	
     // System Control Register = R0
     mcr p15,0,r0,c1,c0,0	
