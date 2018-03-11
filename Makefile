@@ -16,8 +16,11 @@ vectors.o : vectors.s
 rpmv0.o : rpmv0.c
 	$(ARMGNU)-gcc $(COPS) -c rpmv0.c -o rpmv0.o
 
-rpmv0.elf : memmap vectors.o rpmv0.o 
-	$(ARMGNU)-ld vectors.o rpmv0.o -T memmap -o rpmv0.elf
+game126.o : game126.rom
+	$(ARMGNU)-ld -r -b binary -o $@ $<
+
+rpmv0.elf : memmap vectors.o rpmv0.o game126.o
+	$(ARMGNU)-ld vectors.o rpmv0.o game126.o -T memmap -o rpmv0.elf
 	$(ARMGNU)-objdump -D rpmv0.elf > rpmv0.list
 
 rpmv0.bin : rpmv0.elf

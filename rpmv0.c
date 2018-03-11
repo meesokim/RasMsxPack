@@ -37,7 +37,8 @@
 static unsigned char ROM[] = {
 //#include "Antarctic.data"
 //#include "Gradius.data"
-#include "Zemix30.data"
+//#include "Zemix30.data"
+#include "game126.data"
 };	
 
 /** GPIO Register set */
@@ -66,12 +67,24 @@ void GPIO_PUT(unsigned int a, unsigned int b)
 {
 	gpio[GPIO_GPSET0] = a;
 	gpio[GPIO_GPCLR0] = b;
-	asm volatile ("nop;");
+	asm volatile ("nop;"); 
 }
 
 unsigned int GPIO_GET0()
 {
 	return gpio[GPIO_GPLEV0];
+}
+
+unsigned short GetAddress()
+{
+	GPIO_PUT(LE_A, 0xff | LE_B); 
+	return GPIO_GET0() & 0xffff;	
+}
+
+unsigned char GetData()
+{
+	GPIO_PUT(LE_B, LE_A);
+	return GPIO_GET0() & 0xff;
 }
 
 extern void start_mmu ( unsigned int, unsigned int );
@@ -121,16 +134,19 @@ void notmain( unsigned int r0, unsigned int r1, unsigned int atags )
 	unsigned int ra;
 	//int i = 0;
 	int page[8] = {0,0,0,1,2,3,4,5};
+	int page2[4] = {0,0,1,2};
 	int mapper = 0;
 	int signal = 0;
 	int pg = 0;
+    gpio[GPIO_GPFSEL0] = 0x49249249;
 	gpio[GPIO_GPFSEL1] = 0x49249249;
-	gpio[GPIO_GPCLR0] = RWAIT;
+	gpio[GPIO_GPFSEL2] = 0x49249249;
+	GPIO_PUT(LE_B | RST | RWAIT, LE_A | 0xffff);	
 
 #if 1
     for(ra=0;;ra+=0x00100000)
     {
-        mmu_section(ra,ra,0x12);
+        mmu_section(ra,ra,0x0);
         if(ra==0xFFF00000) break;
     }	
     //peripherals	
@@ -139,12 +155,11 @@ void notmain( unsigned int r0, unsigned int r1, unsigned int atags )
     start_mmu(MMUTABLEBASE,0x00000001|0x1000|0x0005); //[23]=0 subpages enabled = legacy ARMv4,v5 and v6 
     /* Set the LED GPIO pin to an output to drive the LED */
 #endif
-    gpio[GPIO_GPFSEL0] = 0x49249249;
-	gpio[GPIO_GPFSEL1] = 0x49249249;
-	gpio[GPIO_GPFSEL2] = 0x49249249;
-	GPIO_PUT(LE_B | RST, LE_A | 0xffff);
+
 	
-	if (sizeof(ROM) > 32768)
+	if (sizeof(ROM) == 2 * 1024 * 1024)
+		mapper = 2;
+	else if (sizeof(ROM) > 32768)
 		mapper = 1;
 	if (!mapper)
 	{
@@ -167,7 +182,7 @@ void notmain( unsigned int r0, unsigned int r1, unsigned int atags )
 					continue;
 			}
 		}
-	} else
+	} else if (mapper == 1)
 	{
 		while(1)
 		{
@@ -176,8 +191,7 @@ void notmain( unsigned int r0, unsigned int r1, unsigned int atags )
 			{
 				if (signal & RD)
 				{
-					GPIO_PUT(LE_A, 0xff | LE_B); 
-					addr0 = GPIO_GET0() & 0xffff;
+					addr0 = GetAddress();
 					pg = (addr0 & 0xe000)>>13;
 					byte = ROM[page[pg] * 0x2000 + (addr0 & 0x1fff)];
 					GPIO_PUT(LE_B | byte | RW, LE_A);
@@ -186,11 +200,9 @@ void notmain( unsigned int r0, unsigned int r1, unsigned int atags )
 				}
 				else if (signal & WR)
 				{
-					GPIO_PUT(LE_A, 0xff | LE_B); 
-					addr0 = GPIO_GET0() & 0xffff;
+					addr0 = GetAddress();
 					pg = (addr0 & 0xe000)>>13;
-					GPIO_PUT(LE_B, LE_A);
-					byte = 0x3f & GPIO_GET0();
+					byte = GetData();
 					if ((((addr0 & 0x1fff) == 0) && (pg > 2)) || (!(addr0 & 0xfff)))
 						page[pg] = byte;
 					while(!(gpio[GPIO_GPLEV0] & SLTSL));
@@ -200,8 +212,41 @@ void notmain( unsigned int r0, unsigned int r1, unsigned int atags )
 			
 			}			
 		}
+	} else if (mapper == 2)
+	{
+		while(1)
+		{
+			signal = ~GPIO_GET0();
+			if (signal & SLTSL)
+			{
+				if (signal & RD)
+				{
+					addr0 = GetAddress();
+					pg = (addr0 & 0xc000)>>14;
+					byte = ROM[page2[pg] * 0x4000 + (addr0 & 0x3fff)];
+					GPIO_PUT(LE_B | byte | RW, LE_A);
+					while(!(gpio[GPIO_GPLEV0] & SLTSL));
+					GPIO_PUT(0, RW);
+				}
+				else if (signal & WR)
+				{
+					addr0 = GetAddress();
+					byte = GetData();
+					if (addr0 == 0x6000)
+						page2[1] = byte;
+					else if (addr0 == 0x7000)
+						page2[2] = byte;
+					while(!(gpio[GPIO_GPLEV0] & SLTSL));
+				}
+				else
+					continue;
+			
+			}			
+		}		
 	}
 }
+
+
 //-------------------------------------------------------------------------
 //-------------------------------------------------------------------------
 

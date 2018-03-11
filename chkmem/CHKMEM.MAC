@@ -1,0 +1,337 @@
+        ASEG
+        .phase  0D000h-7
+
+        ;header for .BIN file
+        DB      0FEh
+        DW      0D000h
+        DW      ENDOFCODE-1
+        DW      START
+
+START: 
+
+; ---------------------------------------------------------------------        
+    JR CONT
+    MSG1:DB 'MEMORY MAPPER: SLOT'
+    MSG2:DB 'MEGARAM: SLOT'
+    MSG3:DB 'SEM MAPPER'
+    MSG4:DB 'SEM MEGARAM'
+    MSG5:DB 'NUMERO DE PAGINAS:'
+    EHL:DW 0
+    EDE:DW 0
+    CONT:CALL 6CH
+    CALL CHKMEM
+    PUSH DE
+    LD A,L
+    OR H
+    JR Z,SMAP
+    CALL COMMAP
+    JR JUMP1
+    SMAP:CALL SEMMAP
+    JUMP1:POP DE
+    LD A,E
+    OR D
+    JR Z,SMEG
+    JP COMMEG
+    SMEG:JP SEMMEG
+    CHKMEM:JP PULA
+    SLOT:DW 0
+    STMEG:DW 0
+    STMAP:DW 0
+    VSLOTP:DB 0
+    VSLOTS:DB 0
+    VSLOTE:DB 0
+    PULA:CALL ZSLOT
+    CALL GETSLOT
+    LD HL,0
+    LD (SLOT),HL
+    LOOP:LD HL,(SLOT)
+    CALL SETSLOT
+    CALL VERSLOT
+    CALL CHKFIM
+    JR NC,LOOP
+    JP SLOTFIM
+    GETSLOT:CALL 138H
+    AND 00001100B
+    RRCA
+    RRCA
+    LD (VSLOTP),A
+    LD DE,0
+    LD E,A
+    LD HL,0FCC1H
+    ADD HL,DE
+    LD A,(HL)
+    LD (VSLOTE),A
+    LD DE,4
+    ADD HL,DE
+    LD A,(HL)
+    AND 00001100B
+    RRCA
+    RRCA
+    LD (VSLOTS),A 
+    RET
+    SLOTFIM:LD A,(VSLOTE)
+    LD B,A
+    LD A,(VSLOTS)
+    RLCA
+    RLCA
+    OR B
+    LD B,A
+    LD A,(VSLOTP)
+    OR B
+    LD HL,4000H
+    CALL 24H
+    LD HL,(STMAP)
+    LD DE,(STMEG)
+    RET
+    CHKFIM:LD HL,(SLOT)
+    LD A,L
+    CP 3
+    JR Z,CHKFL3
+    INC L
+    LD (SLOT),HL
+    XOR A
+    RET
+    CHKFL3:LD A,H
+    CP 3
+    JR Z,CHKFH3
+    LD L,0
+    INC H
+    LD (SLOT),HL
+    XOR A
+    RET
+    CHKFH3:LD A,1
+    RRA
+    RET
+    SETSLOT:LD B,80H
+    LD A,L
+    RLCA
+    RLCA  
+    OR B
+    LD B,A
+    LD A,H
+    OR B
+    LD HL,4000H
+    JP 24H
+    VERSLOT:LD HL,4000H
+    OUT(8EH),A
+    LD A,(HL)
+    INC A  
+    LD (HL),A
+    LD B,A
+    LD A,(HL)
+    CP B
+    JR Z,VSRAM
+    IN A,(8EH)
+    LD A,(HL)
+    INC A
+    LD (HL),A
+    LD B,A
+    LD A,(HL)
+    CP B
+    RET NZ
+    LD HL,(SLOT)
+    CALL VSEXP
+    LD (STMEG),HL
+    JP CPMEG
+    VSRAM:LD A,2
+    OUT(0FDH),A
+    XOR A
+    LD (HL),A
+    LD A,3
+    OUT(0FDH),A
+    LD A,1
+    LD (HL),A
+    LD A,2
+    OUT(0FDH),A
+    LD A,(HL)
+    AND A
+    RET NZ
+    LD HL,(SLOT)
+    LD (STMAP),HL
+    CPMAP:LD B,0
+    LD HL,4000H
+    MALOOP:LD A,B
+    OUT(0FDH),A
+    XOR A
+    LD (HL),A
+    LD A,B
+    INC B
+    CP 0FFH
+    JR NZ,MALOOP
+    LD B,0
+    LD DE,0
+    MA2LOOP:LD A,B
+    OUT(0FDH),A
+    LD A,(HL)
+    AND A
+    JR NZ,MA2SAI
+    LD A,1
+    LD (HL),A
+    INC B
+    INC DE
+    JR MA2LOOP
+    MA2SAI:PUSH DE
+    POP IX
+    RET
+    CPMEG:LD B,0
+    LD HL,4000H
+    MELOOP:OUT(8EH),A
+    LD A,B 
+    LD (HL),A
+    IN A,(8EH)
+    XOR A
+    LD (HL),A
+    LD A,B
+    INC B
+    CP 0FFH
+    JR NZ,MELOOP
+    LD B,0
+    LD DE,0
+    ME2LOOP:OUT(8EH),A
+    LD A,B
+    LD (HL),A
+    IN A,(8EH)
+    LD A,(HL)
+    AND A
+    JR NZ,ME2SAI
+    LD A,1
+    LD (HL),A
+    INC B
+    INC DE
+    JR ME2LOOP
+    ME2SAI:PUSH DE
+    POP IY
+    RET
+    VSEXP:PUSH HL
+    LD A,H
+    LD DE,0
+    LD E,A
+    LD HL,0FCC1H
+    ADD HL,DE
+    LD A,(HL)
+    CP 80H
+    JR NZ,VSESIM
+    POP HL
+    RET
+    VSESIM:POP HL
+    LD L,0
+    RET
+    ZSLOT:LD HL,0
+    LD (STMAP),HL
+    LD (STMEG),HL
+    LD IX,0
+    LD IY,0
+    RET
+    SEMMAP:LD HL,MSG3
+    LD DE,170
+    LD BC,10
+    JP 5CH
+    SEMMEG:LD HL,MSG4
+    LD DE,290
+    LD BC,11
+    JP 5CH
+    COMMAP:PUSH HL
+    LD HL,MSG1
+    LD DE,170
+    LD BC,19
+    CALL 5CH
+    POP HL
+    PUSH HL
+    LD A,H
+    ADD A,30H
+    LD HL,190
+    CALL 4DH
+    LD A,'-'
+    LD HL,191
+    CALL 4DH
+    POP HL
+    LD A,L
+    ADD A,30H
+    LD HL,192
+    CALL 4DH
+    LD (EHL),IX
+    LD DE,210
+    LD (EDE),DE
+    JP PRINT
+    COMMEG:PUSH DE
+    LD HL,MSG2
+    LD DE,290
+    LD BC,13
+    CALL 5CH
+    POP DE
+    PUSH DE
+    LD A,D
+    ADD A,30H
+    LD HL,304
+    CALL 4DH
+    LD A,'-'
+    LD HL,305
+    CALL 4DH
+    POP DE
+    LD A,E
+    LD HL,306
+    ADD A,30H
+    CALL 4DH
+    LD (EHL),IY
+    LD DE,330
+    LD (EDE),DE
+    JP PRINT
+    PRINT:LD HL,MSG5
+    LD DE,(EDE)
+    LD BC,18
+    CALL 5CH
+    LD HL,(EHL)
+    LD B,0
+    PLOOP:LD DE,100
+    XOR A
+    LD (EHL),HL
+    SBC HL,DE
+    JP M,PSAI
+    INC B
+    JR PLOOP
+    PSAI:LD A,B
+    ADD A,30H
+    LD HL,(EDE)
+    LD DE,20
+    ADD HL,DE
+    CALL 4DH
+    LD HL,(EHL)
+    LD B,0
+    PLOP2:LD DE,10
+    XOR A
+    LD (EHL),HL
+    SBC HL,DE
+    JP M,PSAI2
+    INC B
+    JR PLOP2
+    PSAI2:LD A,B
+    ADD A,30H
+    LD HL,(EDE)
+    LD DE,21
+    ADD HL,DE
+    PUSH HL
+    CALL 4DH
+    LD HL,(EHL)
+    LD A,L
+    ADD A,30H
+    POP HL
+    INC HL
+    JP 4DH
+           
+; -----------------------------------------------------------------------        
+
+ENDOFCODE: 
+
+
+	END     START
+
+
+
+
+
+
+
+
+
+
+
