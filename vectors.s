@@ -6,9 +6,28 @@
 .equ	SCTLR_ENABLE_INSTRUCTION_CACHE, 0x1000
 .equ	SCTLR_ENABLE_MMU,				0x1
 
+	.macro safe_svcmode_maskall reg:req
+
+	mrs	\reg , cpsr
+	eor	\reg, \reg, #0x1A		/* test for HYP mode */
+	tst	\reg, #0x1F
+	bic	\reg , \reg , #0x1F		/* clear mode bits */
+	orr	\reg , \reg , #0xC0 | 0x13	/* mask IRQ/FIQ bits and set SVC mode */
+	bne	1f				/* branch if not HYP mode */
+	orr	\reg, \reg, #0x100		/* mask Abort bit */
+	adr	lr, 2f
+	msr	spsr_cxsf, \reg
+	.word	0xE12EF30E			/* msr ELR_hyp, lr */
+	.word	0xE160006E			/* eret */
+1:	msr	cpsr_c, \reg
+2:
+
+	.endm
+
 .globl _start
 _start:
     ldr     sp, =(128 * 1024 * 1024)
+
     // R0 = System Control Register
     mrc p15,0,r0,c1,c0,0
 	
@@ -20,7 +39,6 @@ _start:
 	
     // System Control Register = R0
     mcr p15,0,r0,c1,c0,0
-	cpsid i
 
     bl notmain
 hang: b hang

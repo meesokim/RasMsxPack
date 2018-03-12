@@ -1,7 +1,7 @@
 ARMGNU ?= arm-none-eabi
 
 AOPS = --warn --fatal-warnings 
-COPS = -Wall -Werror -O2 -nostdlib -nostartfiles -ffreestanding -fomit-frame-pointer 
+COPS = -Wall -Werror -O2 -nostdlib -nostartfiles -ffreestanding -fomit-frame-pointer
 
 gcc: rpmv0.hex rpmv0.bin
 
@@ -20,7 +20,7 @@ game126.o : game126.rom
 	$(ARMGNU)-ld -r -b binary -o $@ $<
 
 rpmv0.elf : memmap vectors.o rpmv0.o game126.o
-	$(ARMGNU)-ld vectors.o rpmv0.o game126.o -T memmap -o rpmv0.elf
+	$(ARMGNU)-ld vectors.o rpmv0.o -T memmap -o rpmv0.elf
 	$(ARMGNU)-objdump -D rpmv0.elf > rpmv0.list
 
 rpmv0.bin : rpmv0.elf

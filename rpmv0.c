@@ -4,6 +4,10 @@
 #include "rpi-gpio.h"
 #include "barrier.h"
 
+#define V1
+
+#ifdef V1 
+
 #define RPMV_D0	(1 << 0)
 #define MD00_PIN	0
 #define RA08	(1 << 8)
@@ -31,7 +35,47 @@
 #define RD		RA08
 #define WR		RA14
 #define RESET	RA13
+#define BUSDIR  0
+#define INT		0
+#define WAIT	RST
 
+#elif defined (V2)
+
+#define RA08	(1 << 8)
+#define RA09	(1 << 9)
+#define RA10	(1 << 10)
+#define RA11	(1 << 11)
+#define RA12	(1 << 12)
+#define RA13	(1 << 13)
+#define RA14	(1 << 14)
+#define RA15	(1 << 15)
+#define RC16	(1 << 16)
+#define RC17	(1 << 17)
+#define RC18	(1 << 18)
+#define RC19	(1 << 19)
+#define RC20	(1 << 20)
+#define RC21	(1 << 21)
+#define RC22	(1 << 22)
+#define RC23	(1 << 23)
+#define RC24	(1 << 24)
+#define RC25	(1 << 25)
+#define RC26	(1 << 26)
+#define RC27	(1 << 27)
+
+#define SLTSL	RC16
+#define IORQ	RC17
+#define RESET	RC18
+#define RD		RC19
+#define MREQ	RC20
+#define WAIT	RC21
+#define INT		RC22
+#define BUSDIR	RC23
+#define LE_A	RC27
+#define RW		RC25
+#define LE_B	RC24
+#define DIR_A	RC26
+
+#endif 
 #define MMUTABLEBASE 0x00004000
 
 static unsigned char ROM[] = {
@@ -67,7 +111,6 @@ void GPIO_PUT(unsigned int a, unsigned int b)
 {
 	gpio[GPIO_GPSET0] = a;
 	gpio[GPIO_GPCLR0] = b;
-	asm volatile ("nop;"); 
 }
 
 unsigned int GPIO_GET0()
@@ -75,15 +118,27 @@ unsigned int GPIO_GET0()
 	return gpio[GPIO_GPLEV0];
 }
 
+unsigned short GPIO_GETA()
+{
+	unsigned short a = GPIO_GET0();
+	return (((a) & 0x00ff) << 8) | (((a) & 0xff00) >> 8);
+}
+
 unsigned short GetAddress()
 {
 	GPIO_PUT(LE_A, 0xff | LE_B); 
-	return GPIO_GET0() & 0xffff;	
+	asm volatile ("nop;"); 
+#ifdef V1
+	return GPIO_GET0() & 0xffff;
+#elif defined V2
+	return GPIO_GETA();
+#endif	
 }
 
 unsigned char GetData()
 {
 	GPIO_PUT(LE_B, LE_A);
+	asm volatile ("nop;"); 
 	return GPIO_GET0() & 0xff;
 }
 
@@ -141,19 +196,18 @@ void notmain( unsigned int r0, unsigned int r1, unsigned int atags )
     gpio[GPIO_GPFSEL0] = 0x49249249;
 	gpio[GPIO_GPFSEL1] = 0x49249249;
 	gpio[GPIO_GPFSEL2] = 0x49249249;
-	GPIO_PUT(LE_B | RST | RWAIT, LE_A | 0xffff);	
+	GPIO_PUT(LE_B | INT | BUSDIR | WAIT, LE_A | 0xffff);
 
 #if 1
     for(ra=0;;ra+=0x00100000)
     {
-        mmu_section(ra,ra,0x0);
+        mmu_section(ra,ra,0x2);
         if(ra==0xFFF00000) break;
     }	
     //peripherals	
     mmu_section(0x20000000,0x20000000,0x0); //NOT CACHED!
     mmu_section(0x20200000,0x20200000,0x0); //NOT CACHED!	
     start_mmu(MMUTABLEBASE,0x00000001|0x1000|0x0005); //[23]=0 subpages enabled = legacy ARMv4,v5 and v6 
-    /* Set the LED GPIO pin to an output to drive the LED */
 #endif
 
 	
@@ -198,7 +252,7 @@ void notmain( unsigned int r0, unsigned int r1, unsigned int atags )
 					while(!(gpio[GPIO_GPLEV0] & SLTSL));
 					GPIO_PUT(0, RW);
 				}
-				else if (signal & WR)
+				else// if (signal & WR)
 				{
 					addr0 = GetAddress();
 					pg = (addr0 & 0xe000)>>13;
@@ -207,8 +261,6 @@ void notmain( unsigned int r0, unsigned int r1, unsigned int atags )
 						page[pg] = byte;
 					while(!(gpio[GPIO_GPLEV0] & SLTSL));
 				}
-				else
-					continue;
 			
 			}			
 		}
@@ -228,7 +280,7 @@ void notmain( unsigned int r0, unsigned int r1, unsigned int atags )
 					while(!(gpio[GPIO_GPLEV0] & SLTSL));
 					GPIO_PUT(0, RW);
 				}
-				else if (signal & WR)
+				else //if (signal & WR)
 				{
 					addr0 = GetAddress();
 					byte = GetData();
@@ -236,12 +288,10 @@ void notmain( unsigned int r0, unsigned int r1, unsigned int atags )
 						page2[1] = byte;
 					else if (addr0 == 0x7000)
 						page2[2] = byte;
-					while(!(gpio[GPIO_GPLEV0] & SLTSL));
+					while(!(gpio[GPIO_GPLEV0] & SLTSL)); 
 				}
-				else
-					continue;
-			
-			}			
+			}
+
 		}		
 	}
 }
