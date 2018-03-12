@@ -19,7 +19,8 @@ _start:
     bic r0,#SCTLR_ENABLE_MMU
 	
     // System Control Register = R0
-    mcr p15,0,r0,c1,c0,0	
+    mcr p15,0,r0,c1,c0,0
+	cpsid i
 
     bl notmain
 hang: b hang

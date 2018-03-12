@@ -247,6 +247,14 @@ void notmain( unsigned int r0, unsigned int r1, unsigned int atags )
 }
 
 
+void __attribute__((interrupt("FIQ"))) fiq_vector(void)
+{
+	while( 1 )
+	{
+		/* Do Nothing! */
+	}
+}
+
 //-------------------------------------------------------------------------
 //-------------------------------------------------------------------------
 
