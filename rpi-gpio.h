@@ -32,13 +32,13 @@
 #define RPI_GPIO_H
 
 /* The base address of the GPIO peripheral (ARM Physical Address) */
-#if defined( RPI2 ) || defined( RPI3 )
+#if RASPPI==2 || RASPPI==3
     #define GPIO_BASE       0x3F200000UL
 #else
     #define GPIO_BASE       0x20200000UL
 #endif
 
-#if defined( RPIBPLUS ) || defined( RPI2 ) || defined( RPI3 )
+#if defined( RPIBPLUS ) || RASPPI==2 || RASPPI==3
     #define LED_GPFSEL      GPIO_GPFSEL4
     #define LED_GPFBIT      21
     #define LED_GPSET       GPIO_GPSET1

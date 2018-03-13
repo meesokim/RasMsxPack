@@ -40,7 +40,7 @@ _start:
     // System Control Register = R0
     mcr p15,0,r0,c1,c0,0
 
-    bl notmain
+    bl main
 hang: b hang
 
 .globl dummy
