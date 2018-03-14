@@ -141,6 +141,11 @@ unsigned char GetData()
 	asm volatile ("nop;nop;nop;"); 
 	return GPIO_GET0() & 0xff;
 }
+
+void SetData(unsigned char byte)
+{
+	GPIO_PUT(LE_B | byte | RW | WAIT, LE_A);
+}
 extern "C" {
 extern void start_mmu ( unsigned int, unsigned int );
 extern void stop_mmu ( void );
@@ -225,16 +230,10 @@ int main (void)
 			{
 				if (signal & RD)
 				{
-					GPIO_PUT(LE_A, 0xff | LE_B); 
-					addr0 = GPIO_GET0() & 0xffff;
-					pg = (addr0 & 0xe000)>>13;
-					byte = ROM[page[pg] + (addr0 & 0x1fff)];
-					GPIO_PUT(LE_B | byte | RW | WAIT, LE_A);
+					SetData(ROM[GetAddress() - 0x4000]); 					
 					while(!(gpio[GPIO_GPLEV0] & SLTSL));
 					GPIO_PUT(0, RW);
 				}
-				else
-					continue;
 			}
 		}
 	} else if (mapper == 1)
@@ -269,14 +268,18 @@ int main (void)
 	{
 		while(1)
 		{
-			signal = ~GPIO_GET0();
-			if (signal & SLTSL)
+			gpio[GPIO_GPFEN0] = SLTSL;		
+//			signal = ~GPIO_GET0();			
+			if ((signal = ~GPIO_GET0()) & SLTSL)
 			{
+				
 				addr0 = GetAddress();
 				if (signal & RD)
 				{
 					byte = ROM[page2[addr0 >>14] + (addr0 & 0x3fff)];
-					GPIO_PUT(LE_B | byte | RW | WAIT, LE_A);
+					SetData(byte);
+					while(!(gpio[GPIO_GPLEV0] & SLTSL));
+					GPIO_PUT(0, RW);
 				}
 				else 
 				{
@@ -285,10 +288,10 @@ int main (void)
 						page2[1] = byte * 0x4000;
 					else if (addr0 == 0x7000)
 						page2[2] = byte * 0x4000;
+					while(!(gpio[GPIO_GPLEV0] & SLTSL));
 				}
-				while(!(gpio[GPIO_GPLEV0] & SLTSL));
-				GPIO_PUT(0, RW);
 			}
+//			gpio[GPIO_GPEDS0] = SLTSL;
 		}		
 	}
 	return 0;
