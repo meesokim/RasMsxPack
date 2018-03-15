@@ -39,7 +39,10 @@ _start:
 	
     // System Control Register = R0
     mcr p15,0,r0,c1,c0,0
-
+enter_critical_section:
+	mrs r0, cpsr
+	cpsid if
+	and r0, r0, #0xc0  // leave just the I and F flags
     bl main
 hang: b hang
 

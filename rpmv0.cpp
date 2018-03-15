@@ -126,25 +126,19 @@ unsigned short GPIO_GETA()
 
 unsigned short GetAddress()
 {
-	GPIO_PUT(LE_A, 0xffff | LE_B); 
-	asm volatile ("nop;nop;"); 
-#ifdef V1
-	return GPIO_GET0();
-#elif defined V2
-	return GPIO_GETA();
-#endif	
+	unsigned short addr0;
+	GPIO_PUT(LE_A, LE_B); 
+	asm volatile ("nop;"); 
+	addr0 = GPIO_GET0();
+	GPIO_PUT(LE_B, LE_A);
+	return addr0;
 }
 
 unsigned char GetData()
 {
 	GPIO_PUT(LE_B, LE_A);
-	asm volatile ("nop;nop;nop;"); 
-	return GPIO_GET0() & 0xff;
-}
-
-void SetData(unsigned char byte)
-{
-	GPIO_PUT(LE_B | byte | RW | WAIT, LE_A);
+	asm volatile ("nop;"); 
+	return GPIO_GET0();
 }
 extern "C" {
 extern void start_mmu ( unsigned int, unsigned int );
@@ -189,8 +183,8 @@ int main (void)
 	//int loop;
     //unsigned int* counters;
 	//unsigned char *addr;
-	unsigned int addr0;
-	unsigned char byte;
+	register unsigned short addr0;
+	register unsigned char byte;
 	unsigned int ra;
 	//int i = 0;
 	int page[8] = {0,0,0,1,2,3,4,5};
@@ -201,19 +195,22 @@ int main (void)
     gpio[GPIO_GPFSEL0] = 0x49249249;
 	gpio[GPIO_GPFSEL1] = 0x49249249;
 	gpio[GPIO_GPFSEL2] = 0x49249249;
-	GPIO_PUT(LE_B | INT | BUSDIR | WAIT, LE_A | 0xffff);
+	GPIO_PUT(LE_B | INT | BUSDIR | WAIT, LE_A | 0xffff | RW);
 
 #if 1
     for(ra=0;;ra+=0x00100000)
     {
-        mmu_section(ra,ra,0x12);
+        mmu_section(ra,ra,(1 << 16)|(1 << 15));
         if(ra==0xFFF00000) break;
     }	
     //peripherals	
-    mmu_section(0x20000000,0x20000000,0x0); //NOT CACHED!
-    mmu_section(0x20200000,0x20200000,0x0); //NOT CACHED!	
+#if RASPPI==1	
+   mmu_section(0x20000000,0x20000000,(1 << 16)); //NOT CACHED!
+   mmu_section(0x20200000,0x20200000,(1 << 16)); //NOT CACHED!	
+#else	
     mmu_section(0x3F000000,0x3F000000,0x0); //NOT CACHED!
 	mmu_section(0x3F200000,0x3F200000,0x0); //NOT CACHED!
+#endif	
     start_mmu(MMUTABLEBASE,0x00000001|0x1000|0x0005); //[23]=0 subpages enabled = legacy ARMv4,v5 and v6 
 #endif
 	
@@ -230,10 +227,16 @@ int main (void)
 			{
 				if (signal & RD)
 				{
-					SetData(ROM[GetAddress() - 0x4000]); 					
+					GPIO_PUT(LE_A, 0xff | LE_B); 
+					addr0 = GPIO_GET0() & 0xffff;
+					pg = (addr0 & 0xe000)>>13;
+					byte = ROM[page[pg] + (addr0 & 0x1fff)];
+					GPIO_PUT(LE_B | byte | RW | WAIT, LE_A);
 					while(!(gpio[GPIO_GPLEV0] & SLTSL));
 					GPIO_PUT(0, RW);
 				}
+				else
+					continue;
 			}
 		}
 	} else if (mapper == 1)
@@ -250,13 +253,13 @@ int main (void)
 					byte = ROM[page[pg] * 0x2000 + (addr0 & 0x1fff)];
 					GPIO_PUT(LE_B | byte | RW | WAIT, LE_A);
 					while(!(gpio[GPIO_GPLEV0] & SLTSL));
-					GPIO_PUT(0, RW);
+					GPIO_PUT(0, RW | 0xff);
 				}
 				else// if (signal & WR)
 				{
 					addr0 = GetAddress();
-					pg = (addr0 & 0xe000)>>13;
 					byte = GetData();
+					pg = (addr0 & 0xe000)>>13;
 					if ((((addr0 & 0x1fff) == 0) && (pg > 2)) || (!(addr0 & 0xfff)))
 						page[pg] = byte * 0x2000;
 					while(!(gpio[GPIO_GPLEV0] & SLTSL));
@@ -268,30 +271,31 @@ int main (void)
 	{
 		while(1)
 		{
-			gpio[GPIO_GPFEN0] = SLTSL;		
-//			signal = ~GPIO_GET0();			
-			if ((signal = ~GPIO_GET0()) & SLTSL)
+			signal = ~GPIO_GET0();
+			if (signal & SLTSL)
 			{
-				
-				addr0 = GetAddress();
-				if (signal & RD)
+				if  (signal & RD)
 				{
+					addr0 = GetAddress();
 					byte = ROM[page2[addr0 >>14] + (addr0 & 0x3fff)];
-					SetData(byte);
-					while(!(gpio[GPIO_GPLEV0] & SLTSL));
-					GPIO_PUT(0, RW);
+					GPIO_SET(byte | RW);
+					while(!(gpio[GPIO_GPLEV0] & SLTSL)) asm ("nop;");
+					GPIO_PUT(0, RW | 0xff);
 				}
-				else 
+				else
 				{
+					addr0 = GetAddress();
+					byte = GetData();
+					byte = GetData();
 					byte = GetData();
 					if (addr0 == 0x6000)
 						page2[1] = byte * 0x4000;
 					else if (addr0 == 0x7000)
 						page2[2] = byte * 0x4000;
-					while(!(gpio[GPIO_GPLEV0] & SLTSL));
+					while(!(gpio[GPIO_GPLEV0] & SLTSL)) asm ("nop;");
+					//GPIO_PUT(0, RW | 0xff);
 				}
 			}
-//			gpio[GPIO_GPEDS0] = SLTSL;
 		}		
 	}
 	return 0;

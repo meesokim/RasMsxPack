@@ -40,7 +40,7 @@ LD	= $(PREFIX)ld
 AR	= $(PREFIX)ar
 
 ifeq ($(strip $(RASPPI)),1)
-ARCH	?= -march=armv6k -mtune=arm1176jzf-s -marm -mfpu=vfp -mfloat-abi=$(FLOAT_ABI)
+ARCH	?= -march=armv6 -mtune=arm1176jzf-s -marm -mfpu=vfp -mfloat-abi=$(FLOAT_ABI)
 TARGET	?= kernel
 else ifeq ($(strip $(RASPPI)),2)
 ARCH	?= -march=armv7-a -marm -mfpu=neon-vfpv4 -mfloat-abi=$(FLOAT_ABI)
