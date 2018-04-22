@@ -1,0 +1,33 @@
+m255
+K4
+z2
+13
+!s112 1.1
+!i10d 8192
+!i10e 25
+!i10f 100
+cModel Technology
+Z0 dC:/msys64/home/meesokim/RasMsxPack/simulation/modelsim
+vRPMPv3
+!s110 1524315701
+!i10b 1
+!s100 I^b^Z:9JT0@d^Ao_C<VY72
+I2O>f;Eo7VX]<IUGO;BW@O2
+VDg1SIo80bB@j0V0VzS_@n1
+R0
+w1524315686
+8RPMPv3.vo
+FRPMPv3.vo
+L0 31
+OV;L;10.5b;63
+r1
+!s85 0
+31
+!s108 1524315701.000000
+!s107 RPMPv3.vo|
+!s90 -reportprogress|300|-vlog01compat|-work|work|+incdir+.|RPMPv3.vo|
+!i113 1
+o-vlog01compat -work work
+!s92 -vlog01compat -work work +incdir+.
+tCvgOpt 0
+n@r@p@m@pv3

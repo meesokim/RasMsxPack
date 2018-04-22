@@ -1,0 +1,330 @@
+Analysis & Synthesis report for RPMPv3
+Mon Apr 23 00:09:45 2018
+Quartus Prime Version 17.1.0 Build 590 10/25/2017 SJ Lite Edition
+
+
+---------------------
+; Table of Contents ;
+---------------------
+  1. Legal Notice
+  2. Analysis & Synthesis Summary
+  3. Analysis & Synthesis Settings
+  4. Parallel Compilation
+  5. Analysis & Synthesis Source Files Read
+  6. Analysis & Synthesis Resource Usage Summary
+  7. Analysis & Synthesis Resource Utilization by Entity
+  8. General Register Statistics
+  9. Inverted Register Statistics
+ 10. Multiplexer Restructuring Statistics (Restructuring Performed)
+ 11. Port Connectivity Checks: "reduced_osc:rosc"
+ 12. Port Connectivity Checks: "osc_altufm_osc_518:ufm"
+ 13. Analysis & Synthesis Messages
+ 14. Analysis & Synthesis Suppressed Messages
+
+
+
+----------------
+; Legal Notice ;
+----------------
+Copyright (C) 2017  Intel Corporation. All rights reserved.
+Your use of Intel Corporation's design tools, logic functions 
+and other software and tools, and its AMPP partner logic 
+functions, and any output files from any of the foregoing 
+(including device programming or simulation files), and any 
+associated documentation or information are expressly subject 
+to the terms and conditions of the Intel Program License 
+Subscription Agreement, the Intel Quartus Prime License Agreement,
+the Intel FPGA IP License Agreement, or other applicable license
+agreement, including, without limitation, that your use is for
+the sole purpose of programming logic devices manufactured by
+Intel and sold by Intel or its authorized distributors.  Please
+refer to the applicable agreement for further details.
+
+
+
++---------------------------------------------------------------------------+
+; Analysis & Synthesis Summary                                              ;
++-----------------------------+---------------------------------------------+
+; Analysis & Synthesis Status ; Successful - Mon Apr 23 00:09:45 2018       ;
+; Quartus Prime Version       ; 17.1.0 Build 590 10/25/2017 SJ Lite Edition ;
+; Revision Name               ; RPMPv3                                      ;
+; Top-level Entity Name       ; RPMPv3                                      ;
+; Family                      ; MAX II                                      ;
+; Total logic elements        ; 180                                         ;
+; Total pins                  ; 66                                          ;
+; Total virtual pins          ; 0                                           ;
+; UFM blocks                  ; 1 / 1 ( 100 % )                             ;
++-----------------------------+---------------------------------------------+
+
+
++----------------------------------------------------------------------------------------------------------------------+
+; Analysis & Synthesis Settings                                                                                        ;
++----------------------------------------------------------------------------+--------------------+--------------------+
+; Option                                                                     ; Setting            ; Default Value      ;
++----------------------------------------------------------------------------+--------------------+--------------------+
+; Device                                                                     ; EPM240T100C5       ;                    ;
+; Top-level entity name                                                      ; RPMPv3             ; RPMPv3             ;
+; Family name                                                                ; MAX II             ; Cyclone V          ;
+; Maximum processors allowed for parallel compilation                        ; 4                  ;                    ;
+; Use smart compilation                                                      ; Off                ; Off                ;
+; Enable parallel Assembler and TimeQuest Timing Analyzer during compilation ; On                 ; On                 ;
+; Enable compact report table                                                ; Off                ; Off                ;
+; Restructure Multiplexers                                                   ; Auto               ; Auto               ;
+; Create Debugging Nodes for IP Cores                                        ; Off                ; Off                ;
+; Preserve fewer node names                                                  ; On                 ; On                 ;
+; Intel FPGA IP Evaluation Mode                                              ; Enable             ; Enable             ;
+; Verilog Version                                                            ; Verilog_2001       ; Verilog_2001       ;
+; VHDL Version                                                               ; VHDL_1993          ; VHDL_1993          ;
+; State Machine Processing                                                   ; Auto               ; Auto               ;
+; Safe State Machine                                                         ; Off                ; Off                ;
+; Extract Verilog State Machines                                             ; On                 ; On                 ;
+; Extract VHDL State Machines                                                ; On                 ; On                 ;
+; Ignore Verilog initial constructs                                          ; Off                ; Off                ;
+; Iteration limit for constant Verilog loops                                 ; 5000               ; 5000               ;
+; Iteration limit for non-constant Verilog loops                             ; 250                ; 250                ;
+; Add Pass-Through Logic to Inferred RAMs                                    ; On                 ; On                 ;
+; Infer RAMs from Raw Logic                                                  ; On                 ; On                 ;
+; Parallel Synthesis                                                         ; On                 ; On                 ;
+; NOT Gate Push-Back                                                         ; On                 ; On                 ;
+; Power-Up Don't Care                                                        ; On                 ; On                 ;
+; Remove Redundant Logic Cells                                               ; Off                ; Off                ;
+; Remove Duplicate Registers                                                 ; On                 ; On                 ;
+; Ignore CARRY Buffers                                                       ; Off                ; Off                ;
+; Ignore CASCADE Buffers                                                     ; Off                ; Off                ;
+; Ignore GLOBAL Buffers                                                      ; Off                ; Off                ;
+; Ignore ROW GLOBAL Buffers                                                  ; Off                ; Off                ;
+; Ignore LCELL Buffers                                                       ; Off                ; Off                ;
+; Ignore SOFT Buffers                                                        ; On                 ; On                 ;
+; Limit AHDL Integers to 32 Bits                                             ; Off                ; Off                ;
+; Optimization Technique                                                     ; Balanced           ; Balanced           ;
+; Carry Chain Length                                                         ; 70                 ; 70                 ;
+; Auto Carry Chains                                                          ; On                 ; On                 ;
+; Auto Open-Drain Pins                                                       ; On                 ; On                 ;
+; Perform WYSIWYG Primitive Resynthesis                                      ; Off                ; Off                ;
+; Auto Shift Register Replacement                                            ; Auto               ; Auto               ;
+; Allow Shift Register Merging across Hierarchies                            ; Auto               ; Auto               ;
+; Auto Clock Enable Replacement                                              ; On                 ; On                 ;
+; Allow Synchronous Control Signals                                          ; On                 ; On                 ;
+; Force Use of Synchronous Clear Signals                                     ; Off                ; Off                ;
+; Auto Resource Sharing                                                      ; Off                ; Off                ;
+; Use LogicLock Constraints during Resource Balancing                        ; On                 ; On                 ;
+; Ignore translate_off and synthesis_off directives                          ; Off                ; Off                ;
+; Report Parameter Settings                                                  ; On                 ; On                 ;
+; Report Source Assignments                                                  ; On                 ; On                 ;
+; Report Connectivity Checks                                                 ; On                 ; On                 ;
+; Ignore Maximum Fan-Out Assignments                                         ; Off                ; Off                ;
+; Synchronization Register Chain Length                                      ; 2                  ; 2                  ;
+; Power Optimization During Synthesis                                        ; Normal compilation ; Normal compilation ;
+; HDL message level                                                          ; Level2             ; Level2             ;
+; Suppress Register Optimization Related Messages                            ; Off                ; Off                ;
+; Number of Removed Registers Reported in Synthesis Report                   ; 5000               ; 5000               ;
+; Number of Swept Nodes Reported in Synthesis Report                         ; 5000               ; 5000               ;
+; Number of Inverted Registers Reported in Synthesis Report                  ; 100                ; 100                ;
+; Clock MUX Protection                                                       ; On                 ; On                 ;
+; Block Design Naming                                                        ; Auto               ; Auto               ;
+; Synthesis Effort                                                           ; Auto               ; Auto               ;
+; Shift Register Replacement - Allow Asynchronous Clear Signal               ; On                 ; On                 ;
+; Analysis & Synthesis Message Level                                         ; Medium             ; Medium             ;
+; Disable Register Merging Across Hierarchies                                ; Auto               ; Auto               ;
++----------------------------------------------------------------------------+--------------------+--------------------+
+
+
++------------------------------------------+
+; Parallel Compilation                     ;
++----------------------------+-------------+
+; Processors                 ; Number      ;
++----------------------------+-------------+
+; Number detected on machine ; 4           ;
+; Maximum allowed            ; 4           ;
+;                            ;             ;
+; Average used               ; 1.00        ;
+; Maximum used               ; 1           ;
+;                            ;             ;
+; Usage by Processor         ; % Time Used ;
+;     Processor 1            ; 100.0%      ;
++----------------------------+-------------+
+
+
++------------------------------------------------------------------------------------------------------------------------------------------+
+; Analysis & Synthesis Source Files Read                                                                                                   ;
++----------------------------------+-----------------+-----------------------------+---------------------------------------------+---------+
+; File Name with User-Entered Path ; Used in Netlist ; File Type                   ; File Name with Absolute Path                ; Library ;
++----------------------------------+-----------------+-----------------------------+---------------------------------------------+---------+
+; osc.v                            ; yes             ; User Wizard-Generated File  ; C:/msys64/home/meesokim/RasMsxPack/osc.v    ;         ;
+; RPMPv3.v                         ; yes             ; User Verilog HDL File       ; C:/msys64/home/meesokim/RasMsxPack/RPMPv3.v ;         ;
++----------------------------------+-----------------+-----------------------------+---------------------------------------------+---------+
+
+
++---------------------------------------------------------------------------------------+
+; Analysis & Synthesis Resource Usage Summary                                           ;
++---------------------------------------------+-----------------------------------------+
+; Resource                                    ; Usage                                   ;
++---------------------------------------------+-----------------------------------------+
+; Total logic elements                        ; 180                                     ;
+;     -- Combinational with no register       ; 70                                      ;
+;     -- Register only                        ; 40                                      ;
+;     -- Combinational with a register        ; 70                                      ;
+;                                             ;                                         ;
+; Logic element usage by number of LUT inputs ;                                         ;
+;     -- 4 input functions                    ; 75                                      ;
+;     -- 3 input functions                    ; 27                                      ;
+;     -- 2 input functions                    ; 32                                      ;
+;     -- 1 input functions                    ; 5                                       ;
+;     -- 0 input functions                    ; 1                                       ;
+;                                             ;                                         ;
+; Logic elements by mode                      ;                                         ;
+;     -- normal mode                          ; 159                                     ;
+;     -- arithmetic mode                      ; 21                                      ;
+;     -- qfbk mode                            ; 0                                       ;
+;     -- register cascade mode                ; 0                                       ;
+;     -- synchronous clear/load mode          ; 12                                      ;
+;     -- asynchronous clear/load mode         ; 0                                       ;
+;                                             ;                                         ;
+; Total registers                             ; 110                                     ;
+; Total logic cells in carry chains           ; 23                                      ;
+; I/O pins                                    ; 66                                      ;
+; UFM blocks                                  ; 1                                       ;
+; Maximum fan-out node                        ; osc_altufm_osc_518:ufm|maxii_ufm_block1 ;
+; Maximum fan-out                             ; 110                                     ;
+; Total fan-out                               ; 736                                     ;
+; Average fan-out                             ; 2.98                                    ;
++---------------------------------------------+-----------------------------------------+
+
+
++-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+; Analysis & Synthesis Resource Utilization by Entity                                                                                                                                                                                                   ;
++-----------------------------+-------------+--------------+------------+------+--------------+--------------+-------------------+------------------+-----------------+------------+--------------------------------+--------------------+--------------+
+; Compilation Hierarchy Node  ; Logic Cells ; LC Registers ; UFM Blocks ; Pins ; Virtual Pins ; LUT-Only LCs ; Register-Only LCs ; LUT/Register LCs ; Carry Chain LCs ; Packed LCs ; Full Hierarchy Name            ; Entity Name        ; Library Name ;
++-----------------------------+-------------+--------------+------------+------+--------------+--------------+-------------------+------------------+-----------------+------------+--------------------------------+--------------------+--------------+
+; |RPMPv3                     ; 180 (180)   ; 110          ; 1          ; 66   ; 0            ; 70 (70)      ; 40 (40)           ; 70 (70)          ; 23 (23)         ; 0 (0)      ; |RPMPv3                        ; RPMPv3             ; work         ;
+;    |osc_altufm_osc_518:ufm| ; 0 (0)       ; 0            ; 1          ; 0    ; 0            ; 0 (0)        ; 0 (0)             ; 0 (0)            ; 0 (0)           ; 0 (0)      ; |RPMPv3|osc_altufm_osc_518:ufm ; osc_altufm_osc_518 ; work         ;
++-----------------------------+-------------+--------------+------------+------+--------------+--------------+-------------------+------------------+-----------------+------------+--------------------------------+--------------------+--------------+
+Note: For table entries with two numbers listed, the numbers in parentheses indicate the number of resources of the given type used by the specific entity alone. The numbers listed outside of parentheses indicate the total resources of the given type used by the specific entity and all of its sub-entities in the hierarchy.
+
+
++------------------------------------------------------+
+; General Register Statistics                          ;
++----------------------------------------------+-------+
+; Statistic                                    ; Value ;
++----------------------------------------------+-------+
+; Total registers                              ; 110   ;
+; Number of registers using Synchronous Clear  ; 0     ;
+; Number of registers using Synchronous Load   ; 12    ;
+; Number of registers using Asynchronous Clear ; 0     ;
+; Number of registers using Asynchronous Load  ; 0     ;
+; Number of registers using Clock Enable       ; 50    ;
+; Number of registers using Preset             ; 0     ;
++----------------------------------------------+-------+
+
+
++---------------------------------------------------+
+; Inverted Register Statistics                      ;
++-----------------------------------------+---------+
+; Inverted Register                       ; Fan out ;
++-----------------------------------------+---------+
+; rint                                    ; 1       ;
+; ioreq[20]                               ; 2       ;
+; rwait                                   ; 1       ;
+; r[0]~en                                 ; 1       ;
+; r[1]~en                                 ; 1       ;
+; r[2]~en                                 ; 1       ;
+; r[3]~en                                 ; 1       ;
+; r[4]~en                                 ; 1       ;
+; r[5]~en                                 ; 1       ;
+; r[6]~en                                 ; 1       ;
+; r[7]~en                                 ; 1       ;
+; r[8]~en                                 ; 1       ;
+; r[9]~en                                 ; 1       ;
+; r[10]~en                                ; 1       ;
+; r[11]~en                                ; 1       ;
+; r[12]~en                                ; 1       ;
+; r[13]~en                                ; 1       ;
+; r[14]~en                                ; 1       ;
+; r[15]~en                                ; 1       ;
+; Total number of inverted registers = 19 ;         ;
++-----------------------------------------+---------+
+
+
++------------------------------------------------------------------------------------------------------------------------------------------+
+; Multiplexer Restructuring Statistics (Restructuring Performed)                                                                           ;
++--------------------+-----------+---------------+----------------------+------------------------+------------+----------------------------+
+; Multiplexer Inputs ; Bus Width ; Baseline Area ; Area if Restructured ; Saving if Restructured ; Registered ; Example Multiplexer Output ;
++--------------------+-----------+---------------+----------------------+------------------------+------------+----------------------------+
+; 3:1                ; 8 bits    ; 16 LEs        ; 8 LEs                ; 8 LEs                  ; Yes        ; |RPMPv3|errors[7]          ;
+; 3:1                ; 4 bits    ; 8 LEs         ; 4 LEs                ; 4 LEs                  ; Yes        ; |RPMPv3|r[8]~reg0          ;
+; 4:1                ; 4 bits    ; 8 LEs         ; 8 LEs                ; 0 LEs                  ; Yes        ; |RPMPv3|r[12]~reg0         ;
+; 5:1                ; 8 bits    ; 24 LEs        ; 16 LEs               ; 8 LEs                  ; Yes        ; |RPMPv3|r[0]~reg0          ;
++--------------------+-----------+---------------+----------------------+------------------------+------------+----------------------------+
+
+
++----------------------------------------------------------------------------------------------------------------+
+; Port Connectivity Checks: "reduced_osc:rosc"                                                                   ;
++------+--------+----------+-------------------------------------------------------------------------------------+
+; Port ; Type   ; Severity ; Details                                                                             ;
++------+--------+----------+-------------------------------------------------------------------------------------+
+; clk  ; Output ; Info     ; Connected to dangling logic. Logic that only feeds a dangling port will be removed. ;
++------+--------+----------+-------------------------------------------------------------------------------------+
+
+
++----------------------------------------------------+
+; Port Connectivity Checks: "osc_altufm_osc_518:ufm" ;
++--------+-------+----------+------------------------+
+; Port   ; Type  ; Severity ; Details                ;
++--------+-------+----------+------------------------+
+; oscena ; Input ; Info     ; Stuck at VCC           ;
++--------+-------+----------+------------------------+
+
+
++-------------------------------+
+; Analysis & Synthesis Messages ;
++-------------------------------+
+Info: *******************************************************************
+Info: Running Quartus Prime Analysis & Synthesis
+    Info: Version 17.1.0 Build 590 10/25/2017 SJ Lite Edition
+    Info: Processing started: Mon Apr 23 00:09:24 2018
+Info: Command: quartus_map --read_settings_files=on --write_settings_files=off RPMPv3 -c RPMPv3
+Info (20032): Parallel compilation is enabled and will use up to 4 processors
+Info (12021): Found 2 design units, including 2 entities, in source file osc.v
+    Info (12023): Found entity 1: osc_altufm_osc_518 File: C:/msys64/home/meesokim/RasMsxPack/osc.v Line: 46
+    Info (12023): Found entity 2: osc File: C:/msys64/home/meesokim/RasMsxPack/osc.v Line: 99
+Info (12021): Found 2 design units, including 2 entities, in source file rpmpv3.v
+    Info (12023): Found entity 1: RPMPv3 File: C:/msys64/home/meesokim/RasMsxPack/RPMPv3.v Line: 1
+    Info (12023): Found entity 2: reduced_osc File: C:/msys64/home/meesokim/RasMsxPack/RPMPv3.v Line: 139
+Warning (10236): Verilog HDL Implicit Net warning at RPMPv3.v(24): created implicit net for "clk_0w" File: C:/msys64/home/meesokim/RasMsxPack/RPMPv3.v Line: 24
+Info (12127): Elaborating entity "RPMPv3" for the top level hierarchy
+Warning (10036): Verilog HDL or VHDL warning at RPMPv3.v(20): object "oscena_sig" assigned a value but never read File: C:/msys64/home/meesokim/RasMsxPack/RPMPv3.v Line: 20
+Warning (10230): Verilog HDL assignment warning at RPMPv3.v(77): truncated value with size 32 to match size of target (11) File: C:/msys64/home/meesokim/RasMsxPack/RPMPv3.v Line: 77
+Warning (10230): Verilog HDL assignment warning at RPMPv3.v(90): truncated value with size 32 to match size of target (8) File: C:/msys64/home/meesokim/RasMsxPack/RPMPv3.v Line: 90
+Warning (10230): Verilog HDL assignment warning at RPMPv3.v(98): truncated value with size 32 to match size of target (16) File: C:/msys64/home/meesokim/RasMsxPack/RPMPv3.v Line: 98
+Warning (10230): Verilog HDL assignment warning at RPMPv3.v(110): truncated value with size 32 to match size of target (8) File: C:/msys64/home/meesokim/RasMsxPack/RPMPv3.v Line: 110
+Warning (10230): Verilog HDL assignment warning at RPMPv3.v(117): truncated value with size 32 to match size of target (8) File: C:/msys64/home/meesokim/RasMsxPack/RPMPv3.v Line: 117
+Info (12128): Elaborating entity "osc_altufm_osc_518" for hierarchy "osc_altufm_osc_518:ufm" File: C:/msys64/home/meesokim/RasMsxPack/RPMPv3.v Line: 23
+Info (12128): Elaborating entity "reduced_osc" for hierarchy "reduced_osc:rosc" File: C:/msys64/home/meesokim/RasMsxPack/RPMPv3.v Line: 24
+Warning (10230): Verilog HDL assignment warning at RPMPv3.v(153): truncated value with size 32 to match size of target (16) File: C:/msys64/home/meesokim/RasMsxPack/RPMPv3.v Line: 153
+Warning (13024): Output pins are stuck at VCC or GND
+    Warning (13410): Pin "cd" is stuck at GND File: C:/msys64/home/meesokim/RasMsxPack/RPMPv3.v Line: 7
+    Warning (13410): Pin "ad" is stuck at GND File: C:/msys64/home/meesokim/RasMsxPack/RPMPv3.v Line: 7
+Warning (21074): Design contains 2 input pin(s) that do not drive logic
+    Warning (15610): No output dependent on input pin "clk" File: C:/msys64/home/meesokim/RasMsxPack/RPMPv3.v Line: 4
+    Warning (15610): No output dependent on input pin "zclk" File: C:/msys64/home/meesokim/RasMsxPack/RPMPv3.v Line: 5
+Info (21057): Implemented 247 device resources after synthesis - the final resource count might be different
+    Info (21058): Implemented 27 input pins
+    Info (21059): Implemented 15 output pins
+    Info (21060): Implemented 24 bidirectional pins
+    Info (21061): Implemented 180 logic cells
+    Info (21070): Implemented 1 User Flash Memory blocks
+Warning (15751): Ignored Virtual Pin assignment to "osc_sig".
+Info (144001): Generated suppressed messages file C:/msys64/home/meesokim/RasMsxPack/output_files/RPMPv3.map.smsg
+Info: Quartus Prime Analysis & Synthesis was successful. 0 errors, 15 warnings
+    Info: Peak virtual memory: 653 megabytes
+    Info: Processing ended: Mon Apr 23 00:09:45 2018
+    Info: Elapsed time: 00:00:21
+    Info: Total CPU time (on all processors): 00:00:40
+
+
++------------------------------------------+
+; Analysis & Synthesis Suppressed Messages ;
++------------------------------------------+
+The suppressed messages can be found in C:/msys64/home/meesokim/RasMsxPack/output_files/RPMPv3.map.smsg.
+
+

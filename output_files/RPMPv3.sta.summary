@@ -1,0 +1,17 @@
+------------------------------------------------------------
+TimeQuest Timing Analyzer Summary
+------------------------------------------------------------
+
+Type  : Setup 'ufm|maxii_ufm_block1|osc'
+Slack : 165.649
+TNS   : 0.000
+
+Type  : Hold 'ufm|maxii_ufm_block1|osc'
+Slack : 1.408
+TNS   : 0.000
+
+Type  : Minimum Pulse Width 'ufm|maxii_ufm_block1|osc'
+Slack : 90.643
+TNS   : 0.000
+
+------------------------------------------------------------
