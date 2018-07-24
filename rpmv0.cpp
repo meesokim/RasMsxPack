@@ -4,7 +4,7 @@
 #include "rpi-gpio.h"
 #include "barrier.h"
 
-#define V1
+#define V8
 
 #ifdef V1 
 
@@ -75,6 +75,42 @@
 #define LE_B	RC24
 #define DIR_A	RC26
 
+#elif defined (V8)
+
+#define RA08	(1 << 8)
+#define RA09	(1 << 9)
+#define RA10	(1 << 10)
+#define RA11	(1 << 11)
+#define RA12	(1 << 12)
+#define RA13	(1 << 13)
+#define RA14	(1 << 14)
+#define RA15	(1 << 15)
+#define RC16	(1 << 16)
+#define RC17	(1 << 17)
+#define RC18	(1 << 18)
+#define RC19	(1 << 19)
+#define RC20	(1 << 20)
+#define RC21	(1 << 21)
+#define RC22	(1 << 22)
+#define RC23	(1 << 23)
+#define RC24	(1 << 24)
+#define RC25	(1 << 25)
+#define RC26	(1 << 26)
+#define RC27	(1 << 27)
+
+#define RESET	RC16
+#define SLTSL	RC17
+#define SNDOUT	RC18
+#define IORQ	RC19
+#define RD 		RC20
+#define DAT_EN	RC21
+#define HIADDR	RC22
+#define INT  	RC23
+#define WAIT	RC24
+#define DAT_DIR	RC25
+#define MREQ	RC26
+#define WR		RC27
+
 #endif 
 #define MMUTABLEBASE 0x00004000
 
@@ -127,17 +163,15 @@ unsigned short GPIO_GETA()
 unsigned short GetAddress()
 {
 	unsigned short addr0;
-	GPIO_PUT(LE_A, LE_B); 
-	asm volatile ("nop;"); 
-	addr0 = GPIO_GET0();
-	GPIO_PUT(LE_B, LE_A);
+	GPIO_CLR(HIADDR);
+	addr0 = (GPIO_GET0() & 0xff00) >> 8;
+	GPIO_SET(HIADDR);
+	addr0 += (GPIO_GET0() & 0xff00);
 	return addr0;
 }
 
 unsigned char GetData()
 {
-	GPIO_PUT(LE_B, LE_A);
-	asm volatile ("nop;"); 
 	return GPIO_GET0();
 }
 extern "C" {
@@ -195,7 +229,8 @@ int main (void)
     gpio[GPIO_GPFSEL0] = 0x49249249;
 	gpio[GPIO_GPFSEL1] = 0x49249249;
 	gpio[GPIO_GPFSEL2] = 0x49249249;
-	GPIO_PUT(LE_B | INT | BUSDIR | WAIT, LE_A | 0xffff | RW);
+	GPIO_CLR(0xffffffff);
+	GPIO_SET(INT | WAIT);
 
 #if 1
     for(ra=0;;ra+=0x00100000)
@@ -227,13 +262,11 @@ int main (void)
 			{
 				if (signal & RD)
 				{
-					GPIO_PUT(LE_A, 0xff | LE_B); 
-					addr0 = GPIO_GET0() & 0xffff;
+					addr0 = GetAddress();
 					pg = (addr0 & 0xe000)>>13;
 					byte = ROM[page[pg] + (addr0 & 0x1fff)];
-					GPIO_PUT(LE_B | byte | RW | WAIT, LE_A);
+					GPIO_SET(byte);
 					while(!(gpio[GPIO_GPLEV0] & SLTSL));
-					GPIO_PUT(0, RW);
 				}
 				else
 					continue;
@@ -248,16 +281,19 @@ int main (void)
 			{
 				if (signal & RD)
 				{
+					GPIO_CLR(0xff);
 					addr0 = GetAddress();
 					pg = (addr0 & 0xe000)>>13;
 					byte = ROM[page[pg] * 0x2000 + (addr0 & 0x1fff)];
-					GPIO_PUT(LE_B | byte | RW | WAIT, LE_A);
+					GPIO_SET(byte);
 					while(!(gpio[GPIO_GPLEV0] & SLTSL));
-					GPIO_PUT(0, RW | 0xff);
 				}
 				else// if (signal & WR)
 				{
+					GPIO_CLR(0xff);
 					addr0 = GetAddress();
+					byte = GetData();
+					byte = GetData();
 					byte = GetData();
 					pg = (addr0 & 0xe000)>>13;
 					if ((((addr0 & 0x1fff) == 0) && (pg > 2)) || (!(addr0 & 0xfff)))
@@ -276,14 +312,15 @@ int main (void)
 			{
 				if  (signal & RD)
 				{
+					GPIO_CLR(0xff);
 					addr0 = GetAddress();
 					byte = ROM[page2[addr0 >>14] + (addr0 & 0x3fff)];
-					GPIO_SET(byte | RW);
+					GPIO_SET(byte);
 					while(!(gpio[GPIO_GPLEV0] & SLTSL)) asm ("nop;");
-					GPIO_PUT(0, RW | 0xff);
 				}
 				else
 				{
+					GPIO_CLR(0xff);
 					addr0 = GetAddress();
 					byte = GetData();
 					byte = GetData();
@@ -293,7 +330,6 @@ int main (void)
 					else if (addr0 == 0x7000)
 						page2[2] = byte * 0x4000;
 					while(!(gpio[GPIO_GPLEV0] & SLTSL)) asm ("nop;");
-					//GPIO_PUT(0, RW | 0xff);
 				}
 			}
 		}		

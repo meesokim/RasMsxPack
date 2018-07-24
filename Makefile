@@ -2,7 +2,7 @@
 # Makefile
 #
 
-CIRCLEHOME = ~/c1
+CIRCLEHOME = ~/circlem
 
 OBJS	= vectors.o rpmv0.o 
 
