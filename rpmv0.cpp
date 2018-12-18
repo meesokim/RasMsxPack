@@ -99,12 +99,13 @@
 #define RC27	(1 << 27)
 
 #define RESET	RC16
+#define DAT_EN	RC16
 #define SLTSL	RC17
 #define SNDOUT	RC18
 #define IORQ	RC19
 #define RD 		RC20
-#define DAT_EN	RC21
-#define HIADDR	RC22
+#define BUSDIR	RC21
+#define ADDR	RC22
 #define INT  	RC23
 #define WAIT	RC24
 #define DAT_DIR	RC25
@@ -115,14 +116,15 @@
 #define MMUTABLEBASE 0x00004000
 
 static unsigned char ROM[] = {
-//#include "Antarctic.data"
+#include "Antarctic.data"
 //#include "Gradius.data"
 //#include "Zemix30.data"
-#include "game126.data"
+//#include "game126.data"
 };	
 
 /** GPIO Register set */
 volatile unsigned int* gpio = (unsigned int*)GPIO_BASE;
+volatile unsigned int* gpio0;
 
 void PUT32 ( unsigned int a, unsigned int b)
 {
@@ -154,24 +156,18 @@ unsigned int GPIO_GET0()
 	return gpio[GPIO_GPLEV0];
 }
 
-unsigned short GPIO_GETA()
-{
-	unsigned short a = GPIO_GET0();
-	return (((a) & 0x00ff) << 8) | (((a) & 0xff00) >> 8);
-}
-
 unsigned short GetAddress()
 {
 	unsigned short addr0;
-	GPIO_CLR(HIADDR);
-	addr0 = (GPIO_GET0() & 0xff00) >> 8;
-	GPIO_SET(HIADDR);
-	addr0 += (GPIO_GET0() & 0xff00);
+	GPIO_CLR(ADDR);
+	addr0 = (GPIO_GET0() & 0xffff);
+	GPIO_SET(ADDR);
 	return addr0;
 }
 
 unsigned char GetData()
 {
+	GPIO_SET(ADDR);
 	return GPIO_GET0();
 }
 extern "C" {
@@ -184,7 +180,7 @@ extern void invalidate_caches ( void );
 unsigned int mmu_section ( unsigned int vadd, unsigned int padd, unsigned int flags )
 {
     unsigned int ra;
-    unsigned int rb;
+    unsigned int rb;  
     unsigned int rc;
 
     ra=vadd>>20;
@@ -229,10 +225,8 @@ int main (void)
     gpio[GPIO_GPFSEL0] = 0x49249249;
 	gpio[GPIO_GPFSEL1] = 0x49249249;
 	gpio[GPIO_GPFSEL2] = 0x49249249;
-	GPIO_CLR(0xffffffff);
-	GPIO_SET(INT | WAIT);
 
-#if 1
+#if 0
     for(ra=0;;ra+=0x00100000)
     {
         mmu_section(ra,ra,(1 << 16)|(1 << 15));
@@ -246,8 +240,11 @@ int main (void)
     mmu_section(0x3F000000,0x3F000000,0x0); //NOT CACHED!
 	mmu_section(0x3F200000,0x3F200000,0x0); //NOT CACHED!
 #endif	
-    start_mmu(MMUTABLEBASE,0x00000001|0x1000|0x0005); //[23]=0 subpages enabled = legacy ARMv4,v5 and v6 
+    //start_mmu(MMUTABLEBASE,0x00000001|0x1000|0x0005); //[23]=0 subpages enabled = legacy ARMv4,v5 and v6 
 #endif
+	GPIO_CLR(0xffffffff);
+	GPIO_SET(INT | WAIT | DAT_DIR | DAT_EN);
+	gpio0 = gpio + GPIO_GPLEV0;
 	
 	if (sizeof(ROM) == 2 * 1024 * 1024)
 		mapper = 2;
@@ -257,16 +254,18 @@ int main (void)
 	{
 		while(1)
 		{
-			signal = ~GPIO_GET0();
-			if (signal & SLTSL)
+			GPIO_CLR(ADDR | 0xff);
+			if (!(*gpio0 & SLTSL))
 			{
-				if (signal & RD)
+				if (!(*gpio0 & RD))
 				{
-					addr0 = GetAddress();
-					pg = (addr0 & 0xe000)>>13;
-					byte = ROM[page[pg] + (addr0 & 0x1fff)];
-					GPIO_SET(byte);
-					while(!(gpio[GPIO_GPLEV0] & SLTSL));
+					addr0 = *gpio0;
+					GPIO_CLR(DAT_EN | DAT_DIR);
+					GPIO_SET(ADDR | ROM[addr0 - 0x4000]);
+					while(!(*gpio0 & (RD)));
+					asm ("nop;");
+					asm ("nop;");
+					GPIO_SET(DAT_EN);
 				}
 				else
 					continue;
@@ -285,12 +284,13 @@ int main (void)
 					addr0 = GetAddress();
 					pg = (addr0 & 0xe000)>>13;
 					byte = ROM[page[pg] * 0x2000 + (addr0 & 0x1fff)];
-					GPIO_SET(byte);
-					while(!(gpio[GPIO_GPLEV0] & SLTSL));
+					GPIO_SET(byte | DAT_DIR);
+					while(!(gpio[GPIO_GPLEV0] & SLTSL)) asm ("nop;");
+					GPIO_CLR(DAT_DIR);
 				}
 				else// if (signal & WR)
 				{
-					GPIO_CLR(0xff);
+					GPIO_CLR(0xff | DAT_DIR);
 					addr0 = GetAddress();
 					byte = GetData();
 					byte = GetData();
@@ -315,8 +315,9 @@ int main (void)
 					GPIO_CLR(0xff);
 					addr0 = GetAddress();
 					byte = ROM[page2[addr0 >>14] + (addr0 & 0x3fff)];
-					GPIO_SET(byte);
+					GPIO_SET(byte | DAT_DIR);
 					while(!(gpio[GPIO_GPLEV0] & SLTSL)) asm ("nop;");
+					GPIO_CLR(DAT_DIR);
 				}
 				else
 				{
