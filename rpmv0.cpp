@@ -262,13 +262,10 @@ int main (void)
 					addr0 = *gpio0;
 					GPIO_CLR(DAT_EN | DAT_DIR);
 					GPIO_SET(ADDR | ROM[addr0 - 0x4000]);
-					while(!(*gpio0 & (RD)));
-					asm ("nop;");
+					while(!(*gpio0 & (SLTSL)));
 					asm ("nop;");
 					GPIO_SET(DAT_EN);
 				}
-				else
-					continue;
 			}
 		}
 	} else if (mapper == 1)
