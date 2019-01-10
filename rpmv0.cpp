@@ -124,7 +124,6 @@ static unsigned char ROM[] = {
 
 /** GPIO Register set */
 volatile unsigned int* gpio = (unsigned int*)GPIO_BASE;
-volatile unsigned int* gpio0;
 
 void PUT32 ( unsigned int a, unsigned int b)
 {
@@ -216,6 +215,7 @@ int main (void)
 	register unsigned short addr0;
     //register int addr;
 	register unsigned char byte = 0;
+    register volatile unsigned int* gpio0;
 	//int i = 0;
 	int page[8] = {0,0,0,1,2,3,4,5};
 	int page2[4] = {0,0,1,2};
@@ -253,13 +253,13 @@ int main (void)
 	{
 		while(1)
 		{
-			if (!(*gpio0 & SLTSL))
+            register int g = *gpio0;
+			if (!(g & (SLTSL | RD))) 
 			{
-                addr0 = *gpio0;
-				if (!(*gpio0 & RD))
+				if (!(g & RD))
 				{
 					GPIO_CLR(DAT_EN | DAT_DIR | 0xff);
-					GPIO_SET(ADDR | ROM[addr0 & 0x3fff]);
+					GPIO_SET(ADDR | ROM[g & 0x3fff]);
 					while(!(*gpio0 & (SLTSL)));
 				}
                 asm volatile ("nop;");
@@ -271,22 +271,24 @@ int main (void)
 	{
 		while(1)
 		{
-			if (!(*gpio0 & SLTSL))
+            register int g = *gpio0;
+			if (!(g & (SLTSL)))
 			{
-                addr0 = *gpio0;
-				if (!(*gpio0 & RD))
+                g = *gpio0;
+				if (!(g & RD))
 				{
-                    byte = ROM[page2[addr0 >> 14] + (addr0 & 0x3fff)];
+                    byte = ROM[page2[(g & 0x8000)>0] + (g & 0x3fff)];
                     GPIO_CLR(DAT_EN | DAT_DIR | 0xff);					
 					GPIO_SET(ADDR | byte);
                     while(!(*gpio0 & (SLTSL)));
 				}
 				else 
 				{
+                    addr0 = *gpio0;
                     GPIO_CLR(DAT_EN | 0xff);
 					GPIO_SET(ADDR);
                     while(!(*gpio0 & (SLTSL)));  
-                    byte = *gpio0;
+                    byte = *gpio;
 					if (addr0 == 0x6000)
 						page2[1] = byte * 0x4000;
 					else if (addr0 == 0x7000)
