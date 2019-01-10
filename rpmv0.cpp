@@ -116,10 +116,10 @@
 #define MMUTABLEBASE 0x00004000
 
 static unsigned char ROM[] = {
-//#include "Antarctic.data"
+#include "Antarctic.data"
 //#include "Gradius.data"
 //#include "Zemix30.data"
-#include "game126.data"
+//#include "game126.data"
 };	
 
 /** GPIO Register set */
@@ -212,9 +212,9 @@ int main (void)
 	//int loop;
     //unsigned int* counters;
 	//unsigned char *addr;
-	register unsigned short addr0;
+	register volatile unsigned short addr0;
     //register int addr;
-	register unsigned char byte = 0;
+	register volatile unsigned int byte = 0;
     register volatile unsigned int* gpio0;
 	//int i = 0;
 	int page[8] = {0,0,0,1,2,3,4,5};
@@ -224,7 +224,7 @@ int main (void)
     gpio[GPIO_GPFSEL0] = 0x49249249;
 	gpio[GPIO_GPFSEL1] = 0x49249249;
 	gpio[GPIO_GPFSEL2] = 0x49249249;
-    asm volatile ("cpsid f");
+    //asmvolatile ("cpsid f");
 #if 0
     for(unsigned int ra=0;;ra+=0x00100000)
     {
@@ -251,20 +251,26 @@ int main (void)
 		mapper = 1;
 	if (!mapper)
 	{
+		register int g = 0;
+		register unsigned short addr = 0;
+		register int sltsl = -1;
 		while(1)
 		{
-            register int g = *gpio0;
-			if (!(g & (SLTSL | RD))) 
+			g = *gpio0;
+            if (!(g & SLTSL))
 			{
-				if (!(g & RD))
+				if (sltsl == 0)
+					GPIO_CLR(DAT_EN + DAT_DIR);
+				if (sltsl++ == 1)
 				{
-					GPIO_CLR(DAT_EN | DAT_DIR | 0xff);
-					GPIO_SET(ADDR | ROM[g & 0x3fff]);
-					while(!(*gpio0 & (SLTSL)));
+					GPIO_SET(ROM[g & 0x3fff] + ADDR);
 				}
-                asm volatile ("nop;");
-                GPIO_SET(DAT_EN | DAT_DIR | 0xffff);
-                GPIO_CLR(ADDR);
+			}
+			else 
+			{
+				GPIO_CLR(ADDR + 0xffff);
+				GPIO_SET(DAT_EN);
+				sltsl = 0;
 			}
 		}
 	} else if (mapper == 2)
