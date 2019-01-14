@@ -115,6 +115,7 @@
 #endif 
 #define MMUTABLEBASE 0x00004000
 
+
 static unsigned char ROM[] = {
 //#include "Antarctic.data"
 #include "Gradius.data"
@@ -122,8 +123,6 @@ static unsigned char ROM[] = {
 //#include "game126.data"
 };
 
-//#define GPIO_SET(a) gpio[GPIO_GPSET0] = a
-//#define GPIO_CLR(a) gpio[GPIO_GPCLR0] = a
 volatile unsigned int* gpio = (unsigned int*)GPIO_BASE;
 volatile unsigned int* gpio0 = (unsigned int*)(GPIO_BASE+GPIO_GPLEV0*4);
 volatile unsigned int* gpio1 = (unsigned int*)(GPIO_BASE+GPIO_GPSET0*4);
@@ -156,7 +155,7 @@ void GPIO_CLR(unsigned int b)
 	gpio[GPIO_GPCLR0] = b;
 }
 #else
-#define GPIO_GET() (*gpio0)
+#define GPIO_GET() gpio[GPIO_GPLEV0]
 #define GPIO_SET(a) *gpio1 = a
 #define GPIO_CLR(a) *gpio2 = a
 #endif
@@ -171,6 +170,7 @@ extern void start_mmu ( unsigned int, unsigned int );
 extern void stop_mmu ( void );
 extern void invalidate_tlbs ( void );
 extern void invalidate_caches ( void );
+extern void membarrier();
 }
 //-------------------------------------------------------------------
 unsigned int mmu_section ( unsigned int vadd, unsigned int padd, unsigned int flags )
@@ -202,23 +202,15 @@ unsigned int mmu_small ( unsigned int vadd, unsigned int padd, unsigned int flag
     PUT32(rb,rc); //second level descriptor
     return(0);
 }
+
+
 //void notmain( unsigned int r0, unsigned int r1, unsigned int atags )
 int main (void)
 {
-	//int loop;
-    //unsigned int* counters;
-	//unsigned char *addr;
-	//register volatile unsigned short addr0;
-    //register int addr;
-	//int i = 0;
-//	int page[8] = {0,0,0,1,2,3,4,5};
-	int pageKonami4[8] = {0,0,0,1,2,3,4,5};
-	register int mapper = 0;
 	/** GPIO Register set */
     gpio[GPIO_GPFSEL0] = 0x49249249;
 	gpio[GPIO_GPFSEL1] = 0x49249249;
 	gpio[GPIO_GPFSEL2] = 0x49249249;
-   // asm ("cpsid f");
     asm ("cpsid f");
 #if 0
     for(unsigned int ra=0;;ra+=0x00100000)
@@ -238,16 +230,17 @@ int main (void)
 #endif
 	GPIO_CLR(0xffffffff);
 	GPIO_SET(INT | WAIT | DAT_DIR | DAT_EN | 0xffff);
+	register unsigned int g = 0;
+	register unsigned short addr = 0;
+	register int sltsl = 0;
+	register int p = 0;
+	register unsigned char  byte = 0;
+	register int mapper = 0;
 	
 	if (sizeof(ROM) > 1 * 1024 * 1024)
 		mapper = 2;
 	else if (sizeof(ROM) > 32768)
 		mapper = 1;
-	register int g = 0;
-	register unsigned short addr = 0;
-	register int sltsl = -1;
-	register int p = 0;
-	register unsigned char  byte = 0;
 	if (!mapper)
 	{
 		while(1)
@@ -259,44 +252,27 @@ int main (void)
 				{
 					GPIO_CLR(DAT_EN | DAT_DIR);
 					GPIO_SET(ADDR);
-				}
-				if (sltsl++ == 1)
+				} 
+				else if (sltsl == 1)
 				{
-					addr = g & 0xffff;
-					p = (pageKonami4[((addr >> 13) & 7)] << 13) + (addr & 0x1fff);
-					p = addr & 0x3fff;
-					byte = ROM[p & 0x3fff];
+					addr = g;
+					p = addr - 0x4000;
+					byte = ROM[p];
 					GPIO_SET(byte);
 				}
+				sltsl++;
 			}
 			else if (g & SLTSL)
 			{
-				GPIO_CLR(ADDR | 0xffff);
 				GPIO_SET(DAT_EN | DAT_DIR);
+				GPIO_CLR(ADDR | 0xffff);
 				sltsl = 0;
-			}
-			else if (!(g & (SLTSL | WR)))
-			{
-				if (sltsl == 0)
-				{
-					GPIO_CLR(DAT_EN);
-					GPIO_SET(ADDR | DAT_DIR);
-					addr = g & 0xffff;
-				}
-				if (sltsl++ == 1)
-				{
-					byte = GPIO_GET();
-					byte = GPIO_GET() & 0xff;
-					GPIO_CLR(ADDR);
-					GPIO_SET(DAT_EN);
-				}
 			}
 		}
 	} 
-#if 1	
 	else if (mapper == 2)
 	{
-		unsigned char page2[2] = {0,1};
+		unsigned int page2[2] = {0,0};
 		while(1)
 		{
 			g = GPIO_GET();
@@ -305,46 +281,59 @@ int main (void)
 				if (sltsl == 0)
 				{
 					GPIO_CLR(DAT_EN | DAT_DIR);
+				}
+				else if (sltsl == 1)
+				{
+					addr = g;
+					p = page2[(addr & 0x8000) > 0];
+					byte = ROM[p | (addr & 0x3fff)];
+					GPIO_SET(byte | ADDR);
+				}
+				sltsl++;
+			}
+			else if (!(g & (SLTSL | WR)))
+			{
+				if (sltsl == 0)
+				{
+					addr = g & 0x7000;
+					GPIO_CLR(DAT_EN);
 					GPIO_SET(ADDR);
 				}
-				if (sltsl++ == 1)
+				else if (sltsl == 1)
 				{
-					addr = g & 0xffff;
-					p = (page2[((addr >> 13) & 7)] << 13) + (addr & 0x1fff);
-					p = addr & 0x3fff;
-					byte = ROM[p & 0x3fff];
-					GPIO_SET(byte);
+					if (addr == 0x6000)
+					{
+						byte = GPIO_GET();
+						page2[0] = byte << 14;
+						dmb();
+						flushcache();
+					}
+					else if (addr == 0x7000)
+					{
+						byte = GPIO_GET();
+						page2[1] = byte << 14;
+						dmb();
+						flushcache();
+					}
+					GPIO_SET(DAT_EN);
 				}
+				sltsl++;
 			}
 			else if (g & SLTSL)
 			{
 				GPIO_CLR(ADDR | 0xffff);
 				GPIO_SET(DAT_EN | DAT_DIR);
 				sltsl = 0;
-			}
-			else if (!(g & (SLTSL | WR)))
-			{
-				if (sltsl == 0)
-				{
-					GPIO_CLR(DAT_EN);
-					GPIO_SET(ADDR | DAT_DIR);
-					addr = g;
-				}
-				if (sltsl++ == 1)
-				{
-					byte = GPIO_GET() & 0xff;
-					GPIO_CLR(ADDR);
-					GPIO_SET(DAT_EN);
-					if (addr == 0x6000)
-						page2[0] = byte;
-					else if (addr == 0x7000)
-						page2[1] = byte;
-				}
 			}
 		}
 	}
 	else if (mapper == 1)
 	{
+		register unsigned char pageKonami4[8] = {0,0,0,1,2,3,4,5};
+		register unsigned int g;
+		register unsigned short addr = 0;
+		register unsigned char byte;
+		register int sltsl = 0;
 		while(1)
 		{
 			g = GPIO_GET();
@@ -354,130 +343,44 @@ int main (void)
 				{
 					GPIO_CLR(DAT_EN | DAT_DIR);
 				}
-				if (sltsl++ == 1)
+				else if (sltsl == 1)
 				{
-					addr = g & 0xffff;
-					p = (pageKonami4[((addr >> 13) & 7)] << 13);
+					addr = g;
+					p = (pageKonami4[addr >> 13] << 13);
 					byte = ROM[p | (addr & 0x1fff)];
 					GPIO_SET(byte | ADDR);
 				}
+				sltsl++;
 			}
-			else if (!(g & (SLTSL | MREQ | WR)))
+			else if (!(g & (SLTSL | WR)))
 			{
 				if (sltsl == 0)
 				{
-					addr = g;
-					GPIO_SET(ADDR);
+					addr = g & 0xe000;
 					GPIO_CLR(DAT_EN);
+					GPIO_SET(ADDR);
 				}
-				if (sltsl++ == 1)
+				else if (sltsl == 1)
 				{
-					if (addr >= 0x6000 && addr < 0xc000)
+					if ((addr >= 0x6000) && (addr < 0xc000))
 					{
-						byte = GPIO_GET() & 0xff;
-						pageKonami4[(addr >> 13) & 7] = byte;
+						byte = GPIO_GET();
+						pageKonami4[(addr >> 13)] = byte;
 						dmb();
 					}
 					GPIO_SET(DAT_EN);
 				}
+				sltsl++;
 			}
 			else if (g & SLTSL)
 			{
+				GPIO_SET(DAT_EN | DAT_DIR);
 				GPIO_CLR(ADDR | 0xffff);
-				GPIO_SET(DAT_EN | DAT_DIR);
 				sltsl = 0;
 			}
 		}
 	}
-#endif
-#if 0
-	} else if (mapper == 1)
-	{
-		while(1)
-		{
-			g = GPIO_GET0();
-            if (!(g & SLTSL))
-			{
-				if (sltsl == 0)
-				{
-					if (g & WR)
-					{
-						GPIO_CLR(DAT_EN + DAT_DIR);
-						byte = ROM[page[(g & 0xe000)>>13] + (g & 0x1fff)];
-					}
-					else
-					{
-						addr = g;
-						GPIO_CLR(DAT_EN);
-						GPIO_SET(ADDR + DAT_DIR);
-					}
-				}
-				if (sltsl++ == 1)
-				{
-					if (g & WR)
-						GPIO_SET(byte | ADDR);
-					else
-					{
-						pg = (addr & 0xe000)>>13;
-						if ((((addr & 0x1fff) == 0) && (pg > 2)))
-							page[pg] = (GPIO_GET0() & 0xff) * 0x2000;
-					}
-				}
-			}
-			else 
-			{
-				GPIO_CLR(ADDR + 0xffff);
-				GPIO_SET(DAT_EN | DAT_DIR);
-				sltsl = 0;
-			}
-#if 0			
-			else 
-			{
-				GPIO_CLR(ADDR + 0xffff);
-				GPIO_SET(DAT_EN);
-				sltsl = 0;
-			}
-			
-			if (!(*gpio0 & SLTSL))
-			{
-				
-                GPIO_CLR(ADDR | 0xff);
-				if (!(*gpio0 & RD))
-				{
-					addr0 = *gpio0;
-					GPIO_CLR(DAT_EN | DAT_DIR);					
-					GPIO_SET(ADDR | ROM[page[(addr0 & 0xe000)>>13] * 0x2000 + (addr0 & 0x1fff)]);
-					while(!(*gpio0 & (SLTSL)));
-					asm ("nop;");
-					GPIO_SET(DAT_EN);
-				}
-				else 
-				{
-					addr0 = *gpio0;
-					GPIO_CLR(DAT_EN);
-					GPIO_SET(DAT_DIR | ADDR);
-					while(!(*gpio0 & (SLTSL))) 
-                        byte = *gpio0;
-					GPIO_SET(DAT_EN);
-					pg = (addr0 & 0xe000)>>13;
-					if ((((addr0 & 0x1fff) == 0) && (pg > 2)) || (!(addr0 & 0xfff)))
-						page[pg] = byte * 0x2000;
-				}
-			
-			}			
-#endif		
-		}
-	} 
-#endif	
 	return 0;
-}
-
-void __attribute__((interrupt("FIQ"))) fiq_vector(void)
-{
-	while( 1 )
-	{
-		/* Do Nothing! */
-	}
 }
 
 //-------------------------------------------------------------------------

@@ -7,7 +7,7 @@
 .equ	SCTLR_ENABLE_MMU,				0x1
 
 	.macro safe_svcmode_maskall reg:req
-
+	
 	mrs	\reg , cpsr
 	eor	\reg, \reg, #0x1A		/* test for HYP mode */
 	tst	\reg, #0x1F
@@ -26,8 +26,7 @@
 
 .globl _start
 _start:
-    ldr     sp, =(128 * 1024 * 1024)
-
+    ldr     sp, = (128 * 1024 * 1024)
     // R0 = System Control Register
     mrc p15,0,r0,c1,c0,0
 	
@@ -41,8 +40,8 @@ _start:
     mcr p15,0,r0,c1,c0,0
 enter_critical_section:
 	mrs r0, cpsr
+	and r0, r0, #0xc0  // leave just the I and F flags	
 	cpsid if
-	and r0, r0, #0xc0  // leave just the I and F flags
     bl main
 hang: b hang
 
@@ -69,6 +68,20 @@ start_mmu:
     mcr p15,0,r2,c1,c0,0
 
     bx lr
+	
+;@ performs a memory barrier
+;@ http://infocenter.arm.com/help/topic/com.arm.doc.ddi0360f/I1014942.html
+;@
+.global membarrier
+membarrier:
+    push {r3}
+    mov r3, #0                      ;@ The read register Should Be Zero before the call
+    mcr p15, 0, r3, C7, C6, 0       ;@ Invalidate Entire Data Cache
+    mcr p15, 0, r3, c7, c10, 0      ;@ Clean Entire Data Cache
+    mcr p15, 0, r3, c7, c14, 0      ;@ Clean and Invalidate Entire Data Cache
+    mcr p15, 0, r3, c7, c10, 4      ;@ Data Synchronization Barrier
+    mcr p15, 0, r3, c7, c10, 5      ;@ Data Memory Barrier
+    bx lr	
 ;@-------------------------------------------------------------------------
 ;@-------------------------------------------------------------------------
 
