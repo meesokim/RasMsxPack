@@ -1,4 +1,3 @@
-
 //-------------------------------------------------------------------------
 //-------------------------------------------------------------------------
 #include "rpi-gpio.h"
@@ -113,8 +112,6 @@
 #define WR		RC27
 
 #endif 
-#define MMUTABLEBASE 0x00004000
-
 
 static unsigned char ROM[] = {
 //#include "Antarctic.data"
@@ -128,6 +125,7 @@ volatile unsigned int* gpio0 = (unsigned int*)(GPIO_BASE+GPIO_GPLEV0*4);
 volatile unsigned int* gpio1 = (unsigned int*)(GPIO_BASE+GPIO_GPSET0*4);
 volatile unsigned int* gpio2 = (unsigned int*)(GPIO_BASE+GPIO_GPCLR0*4);
 
+#if 0
 void PUT32 ( unsigned int a, unsigned int b)
 {
 	*(unsigned int *)a = b;
@@ -137,7 +135,6 @@ unsigned int GET32 ( unsigned int a)
 	return *(unsigned int *)a;
 }
 
-#if 0
 unsigned int GPIO_GET(void)
 {
 	return gpio[GPIO_GPLEV0];
@@ -145,13 +142,17 @@ unsigned int GPIO_GET(void)
 
 void GPIO_SET(unsigned int b)
 {
-//	*gpio1 = b;
 	gpio[GPIO_GPSET0] = b;
 }
 
 void GPIO_CLR(unsigned int b)
 {
-	//*gpio2 = b;
+	gpio[GPIO_GPCLR0] = b;
+}
+
+void GPIO_PUT(unsigned int a, unsigned int b)
+{
+	gpio[GPIO_GPSET0] = a;
 	gpio[GPIO_GPCLR0] = b;
 }
 #else
@@ -159,52 +160,7 @@ void GPIO_CLR(unsigned int b)
 #define GPIO_SET(a) *gpio1 = a
 #define GPIO_CLR(a) *gpio2 = a
 #endif
-void GPIO_PUT(unsigned int a, unsigned int b)
-{
-	gpio[GPIO_GPSET0] = a;
-	gpio[GPIO_GPCLR0] = b;
-}
 
-extern "C" {
-extern void start_mmu ( unsigned int, unsigned int );
-extern void stop_mmu ( void );
-extern void invalidate_tlbs ( void );
-extern void invalidate_caches ( void );
-extern void membarrier();
-}
-//-------------------------------------------------------------------
-unsigned int mmu_section ( unsigned int vadd, unsigned int padd, unsigned int flags )
-{
-    unsigned int ra;
-    unsigned int rb;  
-    unsigned int rc;
-
-    ra=vadd>>20;
-    rb=MMUTABLEBASE|(ra<<2);
-    rc=(padd&0xFFF00000)|0xC00|flags|2;
-    PUT32(rb,rc);
-    return(0);
-}
-//-------------------------------------------------------------------
-unsigned int mmu_small ( unsigned int vadd, unsigned int padd, unsigned int flags, unsigned int mmubase )
-{
-    unsigned int ra;
-    unsigned int rb;
-    unsigned int rc;
-
-    ra=vadd>>20;
-    rb=MMUTABLEBASE|(ra<<2);
-    rc=(mmubase&0xFFFFFC00)/*|(domain<<5)*/|1;
-    PUT32(rb,rc); //first level descriptor
-    ra=(vadd>>12)&0xFF;
-    rb=(mmubase&0xFFFFFC00)|(ra<<2);
-    rc=(padd&0xFFFFF000)|(0xFF0)|flags|2;
-    PUT32(rb,rc); //second level descriptor
-    return(0);
-}
-
-
-//void notmain( unsigned int r0, unsigned int r1, unsigned int atags )
 int main (void)
 {
 	/** GPIO Register set */
@@ -212,22 +168,6 @@ int main (void)
 	gpio[GPIO_GPFSEL1] = 0x49249249;
 	gpio[GPIO_GPFSEL2] = 0x49249249;
     asm ("cpsid f");
-#if 0
-    for(unsigned int ra=0;;ra+=0x00100000)
-    {
-        mmu_section(ra,ra,(1 << 16)|(1 << 15));
-        if(ra==0xFFF00000) break;
-    }	
-    //peripherals	
-#if RASPPI==1	
-   mmu_section(0x20000000,0x20000000,(1 << 16)); //NOT CACHED!
-   mmu_section(0x20200000,0x20200000,(1 << 16)); //NOT CACHED!	
-#else	
-    mmu_section(0x3F000000,0x3F000000,0x0); //NOT CACHED!
-	mmu_section(0x3F200000,0x3F200000,0x0); //NOT CACHED!
-#endif	
-    start_mmu(MMUTABLEBASE,0x00000001|0x1000|0x0005);//[23]=0 subpages enabled = legacy ARMv4,v5 and v6 
-#endif
 	GPIO_CLR(0xffffffff);
 	GPIO_SET(INT | WAIT | DAT_DIR | DAT_EN | 0xffff);
 	register unsigned int g = 0;
@@ -383,17 +323,3 @@ int main (void)
 	return 0;
 }
 
-//-------------------------------------------------------------------------
-//-------------------------------------------------------------------------
-
-//-------------------------------------------------------------------------
-//
-// Copyright (c) 2012 David Welch dwelch@dwelch.com
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-//-------------------------------------------------------------------------
